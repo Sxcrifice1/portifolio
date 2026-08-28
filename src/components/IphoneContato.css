@@ -1,0 +1,228 @@
+@reference "../index.css";
+
+/* ══════════════════════════════════════════════════════════════════
+   IPHONE DE CONTATO
+   ──────────────────────────────────────────────────────────────────
+   Um <Canvas> com o modelo girando e um bloco de HTML ancorado na
+   TELA do aparelho (drei <Html transform occlude>), que gira junto e
+   some quando a tela vira de costas.
+
+   CSS puro, igual ao resto do projeto: o que está aqui é o que o
+   DevTools mostra.
+   ══════════════════════════════════════════════════════════════════ */
+
+.iphone-palco {
+  position: relative;   /* âncora dos balõezinhos */
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  animation: iphone-entrar .9s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+/* O aparelho surge junto com o giro comandado pelo useFrame. */
+@keyframes iphone-entrar {
+  from { opacity: 0; scale: 0.92; }
+  to   { opacity: 1; scale: 1; }
+}
+
+/* Conteúdo desenhado sobre o vidro. As medidas são em px porque o
+   <Html transform> aplica a própria escala 3D por cima — aqui é só a
+   proporção interna que importa. */
+/* A largura chega do JSX pela variável --painel-largura (constante
+   PAINEL_LARGURA), para os ajustes do painel ficarem num lugar só.
+   Ela precisa ser aplicada AQUI, e não pelo `style` do <Html>: lá ela
+   quebraria a centralização do drei. */
+.iphone-tela {
+  width: var(--painel-largura, 190px);
+  user-select: none;
+}
+
+/* Nasce invisivel: entra quando o giro trava e o React poe a classe
+   `esta-visivel`. */
+.iphone-tela-conteudo {
+  opacity: 0;
+  translate: 0 6px;
+  pointer-events: none;
+  transition: opacity .5s cubic-bezier(.2, .8, .2, 1),
+              translate .5s cubic-bezier(.2, .8, .2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  border-radius: 26px;
+  background: linear-gradient(160deg, rgba(20, 20, 26, .92), rgba(8, 8, 12, .92));
+  text-align: center;
+}
+
+.iphone-tela-conteudo.esta-visivel {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+
+.iphone-tela-titulo {
+  font-family: Outfit, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Ícone + texto lado a lado, SEMPRE numa linha só: o `nowrap` impede
+   que "Enviar mensagem" quebre em duas linhas quando o painel encolhe. */
+.iphone-tela-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+  text-decoration: none;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 9999px;
+  background-color: #25d366;
+  font-family: Outfit, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1),
+              scale .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.iphone-tela-btn:hover {
+  background-color: #34e57a;
+  scale: 1.05;
+}
+
+.iphone-tela-btn:active {
+  scale: 0.96;
+}
+
+.iphone-tela-btn-icone {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+/* Estado de carregamento do .glb (3,7 MB). */
+.iphone-carregando {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, .6);
+  white-space: nowrap;
+}
+
+.iphone-carregando-anel {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, .15);
+  border-top-color: #fff;
+  border-radius: 9999px;
+  animation: spin 1s linear infinite;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   BALÕEZINHOS DE CONVERSA
+   ──────────────────────────────────────────────────────────────────
+   HTML comum por cima do <Canvas>, não objetos 3D — o texto fica
+   sempre reto e legível, sem acompanhar o balanço do aparelho.
+   As posições são em %, então acompanham o tamanho da gaveta.
+   ══════════════════════════════════════════════════════════════════ */
+
+.iphone-baloes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;   /* nunca roubam clique do botão do WhatsApp */
+  z-index: 5;
+
+  /* Cor do balão num só lugar: a PONTINHA é um triângulo separado e
+     precisa usar exatamente a mesma cor, senão a emenda aparece.
+
+     Precisa ser OPACA. A ponta encosta sobrepondo o balão alguns pixels
+     (é isso que fecha a emenda), e com cor translúcida essas duas
+     camadas empilhadas desenhariam uma listra mais escura ali.
+     Este #1b1b1f é exatamente o rgba(28,28,32,.92) de antes já composto
+     sobre o #141414 da gaveta — mesma aparência, sem o efeito colateral. */
+  --balao-fundo: #1b1b1f;
+}
+
+.iphone-balao {
+  position: absolute;
+  max-width: 52%;
+  padding: 10px 14px;
+  border-radius: 15px;
+  background-color: var(--balao-fundo);
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, .55);
+  font-family: Outfit, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, .92);
+  opacity: 0;
+  translate: 0 8px;
+  transition: opacity .5s cubic-bezier(.4, 0, .2, 1),
+              translate .5s cubic-bezier(.4, 0, .2, 1);
+}
+
+.iphone-balao.esta-visivel {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* ── A PONTINHA ──────────────────────────────────────────────────
+   Triângulo feito com bordas: a borda de CIMA é colorida e a lateral
+   é transparente, o que produz a cunha inclinada do WhatsApp. O canto
+   de onde ela sai perde o arredondamento, senão fica um degrau entre
+   a curva do balão e a reta da ponta.
+
+   A ponta sempre aponta PARA O CELULAR: balões à direita dele têm a
+   ponta à esquerda, e vice-versa. */
+.iphone-balao::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-top: 13px solid var(--balao-fundo);
+}
+
+/* O canto de onde a ponta sai fica com raio ZERO. Com qualquer
+   arredondamento a borda do balão curva para dentro nos primeiros
+   pixels e sobra um filete entre a curva e a reta da ponta — era
+   isso que fazia a ponta parecer descolada.
+   O -7px (contra 9px de borda) ainda dá 2px de sobreposição, que
+   cobre qualquer arredondamento de subpixel. */
+
+/* Ponta à ESQUERDA (balões que ficam à direita do aparelho) */
+.iphone-balao--1,
+.iphone-balao--2 {
+  border-top-left-radius: 0;
+}
+
+.iphone-balao--1::before,
+.iphone-balao--2::before {
+  left: -7px;
+  border-left: 9px solid transparent;
+}
+
+/* Ponta à DIREITA (balão que fica à esquerda do aparelho) */
+.iphone-balao--3 {
+  border-top-right-radius: 0;
+}
+
+.iphone-balao--3::before {
+  right: -7px;
+  border-right: 9px solid transparent;
+}
+
+/* Os três pontos marcados: canto superior direito, meio à direita e
+   inferior à esquerda. */
+.iphone-balao--1 { top: 20%; right: 2%; }
+.iphone-balao--2 { top: 52%; right: 4%; }
+.iphone-balao--3 { bottom: 20%; left: 2%; }

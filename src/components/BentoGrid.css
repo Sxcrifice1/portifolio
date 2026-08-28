@@ -1,0 +1,2492 @@
+@reference "../index.css";
+
+/* ══════════════════════════════════════════════════════════════════
+   BENTO GRID
+   ──────────────────────────────────────────────────────────────────
+   Organizado na MESMA ORDEM em que as coisas aparecem no BentoGrid.jsx.
+   Cada seção corresponde a um card ou a uma gaveta do layout.
+
+   Convenção de nomes:
+     .bento-<bloco>            → o container do bloco
+     .bento-<bloco>-<parte>    → um pedaço dentro dele
+     .bento-card--<papel>      → variação do card base (padding/alinhamento)
+
+   CSS PURO, sem @apply — de propósito. Com @apply, o DevTools mostra o
+   resultado expandido (`padding: calc(var(--spacing) * 3)`, `--tw-shadow`,
+   blocos @supports) e o arquivo mostra a abreviação (`p-3`, `shadow-xl`),
+   e não dá para correlacionar os dois. Aqui, o que você lê é exatamente
+   o que aparece no inspetor.
+
+   O card base (fundo, borda, raio, sombra) NÃO está aqui: ele vive na
+   const `cardMotion` do JSX, porque o Framer Motion precisa da string.
+   ══════════════════════════════════════════════════════════════════ */
+
+
+/* ═══ 1. PÁGINA E GRID ════════════════════════════════════════════ */
+
+.bento-page {
+  width: 100%;
+  min-height: 100vh;
+  color: #fff;
+  justify-content: center;
+  align-items: center;
+  font-family: Geist Variable, sans-serif;
+  display: flex;
+  position: relative;
+}
+
+/* Trilho central. Mexer aqui muda a largura de TODO o portfólio. */
+.bento-stage {
+  width: 100%;
+  max-width: 825px;
+  padding-inline: 1rem;
+  padding-block: 1.5rem;
+  margin-inline: auto;
+  transition: all .5s cubic-bezier(0, 0, .2, 1);
+}
+
+@media (width >=40rem) {
+  .bento-stage {
+    padding-inline: 1.5rem;
+    padding-block: 2rem;
+  }
+}
+
+/* A 30% de opacidade este texto sumia contra o fundo de seda animado
+   (que é claro e ainda muda de tom conforme a onda passa). Subido pra
+   80% + peso 500, e com uma sombra escura por baixo pra garantir
+   contraste mesmo quando a faixa clara do fundo passa bem atrás dele. */
+.bento-hint {
+  pointer-events: none;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: .875rem;
+  line-height: 1.4286;
+  font-weight: 500;
+  color: rgba(255, 255, 255, .8);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .55);
+}
+
+/* 20 colunas × linhas de 27px. Os col-span/row-span de cada card estão
+   em LAYOUT_PRESETS no JSX, não aqui — é de lá que sai a posição de cada
+   um. Abaixo de 40rem o grid vira 1 coluna e tudo empilha. */
+.bento-grid {
+  gap: 0.75rem;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  grid-auto-rows: auto;
+  grid-auto-flow: dense;
+  display: grid;
+  position: relative;
+}
+
+@media (width >=40rem) {
+  .bento-grid {
+    grid-template-columns: repeat(20, minmax(0, 1fr));
+    grid-auto-rows: 27px;
+    gap: 12px;
+  }
+}
+
+/* Camada do <svg> que desenha as formas em L/T/H atrás dos cards. */
+.bento-shape-layer {
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  opacity: 80%;
+}
+
+
+/* ═══ 2. CARDS — variações do card base ═══════════════════════════ */
+
+/* Compartilhado por todos os cards que só exibem conteúdo: alinha no
+   topo-esquerda e desliga o zoom do hover (o zoom fica só nos clicáveis). */
+.bento-card--static {
+  cursor: default;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+.bento-card--static:hover {
+  scale: 1;
+}
+
+/* container-type: os presets colocam este card em larguras BEM
+   diferentes (col-span-15 largo, col-span-8 estreito), e o nome de cada
+   visitante tem um comprimento diferente. Em vez de caçar preset por
+   preset, o `@container` abaixo encolhe o nome sozinho sempre que o
+   card ficar estreito — vale para qualquer nome, em qualquer preset. */
+.bento-card--header {
+  container-type: inline-size;
+  container-name: header-card;
+  cursor: default;
+  padding: 1.5rem;
+  justify-content: center !important;
+  align-items: flex-start !important;
+}
+
+/* ── BAIXAR CURRÍCULO ────────────────────────────────────────────
+   O card vira COLUNA para o botão sentar embaixo do bloco de texto.
+   Antes ele era linha, com o `.bento-header-content` como único filho
+   em fluxo — como aquele wrapper já organiza nome e cargo lado a lado
+   por conta própria, trocar a direção aqui não mexe em nada do que já
+   estava montado. */
+.bento-card--header {
+  flex-direction: column;
+  gap: 1rem;
+  /* Vence o `overflow-hidden` que vem do cardMotion: sem isto o painel
+     de escolha de idioma seria cortado na borda do card. Quem precisava
+     daquele recorte era só o brilho do hover, que agora tem o seu
+     próprio (ver .bento-header-glow-clip). */
+  overflow: visible;
+}
+
+.bento-header-glow-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Cargo + botão empilhados: é o que põe o "Baixar currículo" embaixo
+   do "Desenvolvedor e Designer", e não embaixo do nome. */
+.bento-header-lado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.bento-cv {
+  position: relative;
+  z-index: 20;
+}
+
+.bento-cv-botao,
+.bento-cv-confirmar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.875rem;
+  padding-block: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, .08);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1),
+    scale .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-cv-botao:hover,
+.bento-cv-confirmar:hover {
+  background-color: rgba(255, 255, 255, .18);
+  scale: 1.03;
+}
+
+.bento-cv-botao:active,
+.bento-cv-confirmar:active {
+  scale: 0.97;
+}
+
+.bento-cv-icone {
+  width: 0.9375rem;
+  height: 0.9375rem;
+}
+
+/* Painel de escolha do idioma. Vive no <body> (portal) e é posicionado
+   por coordenada medida do botão — ver o comentário no JSX: dentro do
+   card ele herdaria o `opacity: .8` dele e ficaria translúcido, com os
+   cards de trás aparecendo através do texto. */
+.bento-cv-painel {
+  position: fixed;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 11rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 1rem;
+  background-color: rgba(10, 10, 10, .97);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, .7);
+  backdrop-filter: blur(12px);
+}
+
+.bento-cv-pergunta {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: .02em;
+  color: rgba(255, 255, 255, .5);
+  margin-bottom: 0.125rem;
+}
+
+.bento-cv-opcao {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.625rem;
+  padding-block: 0.4375rem;
+  border-radius: 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, .75);
+  cursor: pointer;
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-cv-opcao:hover {
+  background-color: rgba(255, 255, 255, .07);
+}
+
+.bento-cv-opcao.esta-ativa {
+  background-color: rgba(255, 255, 255, .12);
+  color: #fff;
+}
+
+/* O radio nativo do navegador não aceita cor de fundo escura; este é
+   desenhado do zero (o `appearance: none` desliga o visual padrão). */
+.bento-cv-opcao input {
+  appearance: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin: 0;
+  border: 1.5px solid rgba(255, 255, 255, .35);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: border-color .15s cubic-bezier(.4, 0, .2, 1),
+    box-shadow .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-cv-opcao input:checked {
+  border-color: #fff;
+  /* o inset desenha o pontinho central sem precisar de pseudo-elemento */
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.bento-cv-confirmar {
+  justify-content: center;
+  margin-top: 0.25rem;
+  background-color: rgba(255, 255, 255, .16);
+}
+
+/* No celular o alvo cresce e o painel ganha espaço pra respirar. */
+@media (pointer: coarse), (width < 40rem) {
+  .bento-cv-botao {
+    padding-block: 0.625rem;
+  }
+
+  .bento-cv-opcao {
+    padding-block: 0.625rem;
+  }
+}
+
+
+/* Nome + cargo lado a lado (o layout largo de sempre). Vira coluna no
+   @container de card estreito, lá embaixo. */
+.bento-header-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  /* `center`, não `flex-start`: colado no topo, o cargo ficava grudado
+     na PRIMEIRA linha do nome, enquanto o nome ocupa duas. Centralizado,
+     o bloco cargo+botão desce e fica equilibrado com a altura toda do
+     nome ao lado. */
+  align-items: center;
+  /* gap ZERO de propósito: com 1rem aqui o nome perdia 16px de largura
+     e "Oi, eu sou João Arthur" passava de 2 para 3 linhas no preset de
+     card médio (461px, medido). O respiro entre nome e cargo já vem da
+     última linha do nome ser curta. */
+  gap: 0;
+  width: 100%;
+}
+
+@media (width >=40rem) {
+  .bento-card--header {
+    padding: 2.5rem;
+  }
+}
+
+.bento-card--avatar {
+  cursor: pointer;
+}
+
+/* align-items:center (não flex-start): no preset "largo", onde este
+   card fica baixo/largo (row-span menor), o texto colado no topo
+   sobrava um vão vazio embaixo dele e espremia contra o chip "Ver
+   tudo" (que fica ancorado perto do rodapé do card). Centralizado, o
+   bloco de texto (agora mais alto, com título em duas linhas +
+   subtítulo) fica com respiro igual dos dois lados.
+   justify-content:center (não mais flex-start): o texto + o baralho
+   ficavam colados na esquerda, sobrando um vão vazio grande do lado
+   direito do card nesse mesmo preset largo — centralizado, o bloco
+   dos dois juntos fica com respiro igual nas duas laterais. */
+.bento-card--projects {
+  padding: 2rem;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+@media (width >=40rem) {
+  .bento-card--projects {
+    padding: 3rem;
+  }
+}
+
+/* container-type: no preset "largo" este card fica BAIXO (row-span-4
+   em vez de 6), e os 7 chips de Services não cabem no padding padrão
+   — ver @container logo abaixo do bloco de Services na seção 10. */
+.bento-card--services {
+  container-type: size;
+  container-name: services-card;
+  padding: 2rem;
+}
+
+@media (width >=40rem) {
+  .bento-card--services {
+    /* 1.5rem, nao 2.5rem: sao 7 chips numa area de 224px de largura, e
+       cada 1rem de respiro a menos vira espaco pro chip crescer. */
+    padding: 1.5rem;
+  }
+}
+
+/* Usada por Tools e Collab, que têm o mesmo enquadramento. */
+.bento-card--stack {
+  padding: 2rem;
+  flex-direction: column;
+  display: flex;
+}
+
+@media (width >=40rem) {
+
+  /* Usada por Tools e Collab, que têm o mesmo enquadramento. */
+  .bento-card--stack {
+    padding: 1.75rem;
+  }
+}
+
+
+/* ═══ 3. CHIP DE AFFORDANCE ("Sobre mim" / "Ver tudo") ════════════ */
+
+/* Encolhido (era padding-inline:0.75rem/padding-block:0.375rem): nos
+   cards pequenos só-ícone (Sobre mim, Fale comigo, Meus sites) o chip
+   ficava grande demais perto do ícone, quase do tamanho do card
+   inteiro. */
+.bento-chip {
+  border: 1px solid rgba(255, 255, 255, .1);
+  pointer-events: none;
+  bottom: 0.75rem;
+  z-index: 30;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  display: flex;
+  position: absolute;
+  background-color: rgba(0, 0, 0, .4);
+  padding-inline: 0.5625rem;
+  padding-block: 0.25rem;
+  backdrop-filter: blur(8px);
+}
+
+.bento-chip-icon {
+  height: 0.6875rem;
+  width: 0.6875rem;
+  color: rgba(255, 255, 255, .7);
+  transition-property: transform, translate, scale, rotate;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .5s;
+}
+
+.bento-chip-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .025em;
+  color: rgba(255, 255, 255, .7);
+}
+
+
+/* ═══ 4. CARD: HEADER (nome + cargo) ══════════════════════════════ */
+
+.bento-header-name {
+  z-index: 10;
+  margin-bottom: 0.5rem;
+  font-family: Outfit, sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  color: #fff;
+  position: relative;
+}
+
+@media (width >=40rem) {
+  .bento-header-name {
+    font-size: 2.8rem;
+  }
+}
+
+.bento-header-role {
+  z-index: 10;
+  font-size: .875rem;
+  line-height: 1.4286;
+  font-weight: 300;
+  color: oklch(70.8% 0 0);
+  position: relative;
+}
+
+@media (width >=40rem) {
+  .bento-header-role {
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+}
+
+/* Brilho que acende no hover, no canto inferior direito. */
+.bento-header-glow {
+  right: -6rem;
+  bottom: -6rem;
+  height: 16rem;
+  width: 16rem;
+  background-color: rgba(255, 255, 255, .05);
+  border-radius: 9999px;
+  position: absolute;
+  filter: blur(64px);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .7s;
+}
+
+.group:hover .bento-header-glow {
+  background-color: rgba(255, 255, 255, .1);
+}
+
+/* Card estreito (ex.: preset "largo", onde o header cede espaço para o
+   Projects ocupar a linha toda) — encolhe nome e cargo para caberem
+   sem estourar a altura fixa do card. 340px cobre com folga o caso
+   medido (card de 304px de largura). */
+@container header-card (max-width: 340px) {
+  /* O card herda `flex` + direção LINHA do cardMotion, então nome e
+     cargo ficam LADO A LADO. Num card largo tudo bem, mas aqui (medido:
+     305px) o nome sobrava com só 135px e quebrava em 4 linhas soltas
+     ("Oi, eu / sou / João / Arthur"). Empilhado, ele usa os ~225px
+     inteiros e fecha em 2 linhas limpas, com o cargo embaixo.
+
+     Quem vira coluna é o `.bento-header-content` (o wrapper interno), e
+     não o card: um elemento nunca casa com o próprio @container — a
+     consulta só alcança descendentes, então uma regra pro
+     `.bento-card--header` aqui dentro não se aplicaria. */
+  .bento-header-content {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .bento-header-name {
+    font-size: 2rem;
+    line-height: 1.15;
+    margin-bottom: 0.375rem;
+  }
+
+  .bento-header-role {
+    font-size: 0.8125rem;
+    line-height: 1.3;
+  }
+}
+
+
+/* ═══ 5. CARD: AVATAR 3D ══════════════════════════════════════════ */
+
+/* Recorta o Canvas no raio do card. Quando a gaveta abre, o JSX troca
+   por .lshape-clip-l / -r (definidas em index.css) para o lado da
+   emenda ficar reto. */
+.bento-avatar-clip {
+  pointer-events: auto;
+  border-radius: 1.125rem;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* O modelo é maior que o card de propósito e sobe 55% para enquadrar
+   o rosto. Mexa aqui se o personagem ficar descentralizado. */
+.bento-avatar-stage {
+  width: 400px;
+  height: 400px;
+  translate: -50% -55%;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+.bento-avatar-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+
+/* ═══ 6. GAVETA DO AVATAR: PANORAMA 360 ═══════════════════════════ */
+
+/* Casca da gaveta: ancorada fora do grid pelo `style` inline do JSX. */
+.bento-drawer {
+  cursor: default;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+/* CELULAR: a gaveta deixa de ser uma coluna colada na borda do grid e
+   vira um painel sobre a tela inteira.
+
+   No desktop ela é uma casca TRANSPARENTE — quem a desenha é o <path>
+   do SVG, que emenda gaveta e card numa peça só. No celular não existe
+   essa emenda (o painel flutua sobre tudo), então ele precisa do
+   próprio fundo, borda e raio.
+
+   O JSX pendura este elemento no <body> via portal; sem isso, o
+   `position: fixed` se mediria pelos motion.div com transform/
+   perspective que embrulham o grid, e não pela tela. */
+.bento-drawer--mobile {
+  position: fixed;
+  inset: 0.75rem;
+  top: max(0.75rem, env(safe-area-inset-top));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 60;
+  width: auto;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 1.25rem;
+  background-color: #0f0f0f;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .6);
+  overflow: hidden;
+}
+
+/* Cortina atrás do painel: escurece o grid e deixa claro que ele está
+   por cima, em vez de flutuando solto. */
+.bento-drawer--mobile::before {
+  content: "";
+  position: fixed;
+  inset: -100vmax;
+  z-index: -1;
+  background-color: rgba(0, 0, 0, .6);
+  backdrop-filter: blur(4px);
+}
+
+.bento-drawer-inner {
+  position: absolute;
+  inset: 0;
+}
+
+/* Respiro padrão do conteúdo da gaveta. */
+.bento-drawer-pad {
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  flex-direction: column;
+  display: flex;
+}
+
+@media (width >=40rem) {
+  .bento-drawer-pad {
+    padding: 2rem;
+  }
+}
+
+/* Gaveta sem respiro: usada pela dos projetos, onde o scroll precisa
+   colar nas bordas. */
+.bento-drawer-flush {
+  padding: 0;
+}
+
+/* Botão de fechar da gaveta.
+
+   Fica no canto de FORA — o lado oposto ao card — para não cair em cima
+   da emenda entre gaveta e cabeça, que é onde a forma em L/T/H se junta.
+   Qual canto é esse vem do modificador --left / --right logo abaixo.
+
+   O z-index precisa passar do conteúdo da gaveta (o 360 e o scroll dos
+   cases criam contexto próprio), por isso o valor alto. */
+.bento-drawer-close {
+  position: absolute;
+  top: 0.75rem;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 9999px;
+  background-color: rgba(0, 0, 0, .4);
+  color: rgba(255, 255, 255, .7);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: color .15s cubic-bezier(.4, 0, .2, 1),
+    background-color .15s cubic-bezier(.4, 0, .2, 1),
+    scale .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Gaveta à esquerda do card → canto de fora é o superior ESQUERDO. */
+.bento-drawer-close--left {
+  left: 0.75rem;
+}
+
+/* Gaveta à direita do card → canto de fora é o superior DIREITO. */
+.bento-drawer-close--right {
+  right: 0.75rem;
+}
+
+/* No celular não existe emenda com o card (o painel cobre a tela), então
+   o "canto de fora" perde o sentido: o X vai sempre pro superior
+   direito, que é onde a mão espera achar. Precisa vencer as duas regras
+   de lado acima — daí zerar o `left` explicitamente. */
+.bento-drawer--mobile .bento-drawer-close {
+  left: auto;
+  right: 0.75rem;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.bento-drawer-close:hover {
+  background-color: rgba(0, 0, 0, .65);
+  color: #fff;
+  scale: 1.08;
+}
+
+.bento-drawer-close:active {
+  scale: 0.94;
+}
+
+.bento-drawer-close-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.bento-pano {
+  gap: 1rem;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  display: flex;
+}
+
+.bento-pano-head {
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+}
+
+.bento-pano-title {
+  font-family: Outfit, sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  font-weight: 600;
+  color: #fff;
+}
+
+.bento-pano-hint {
+  font-size: .75rem;
+  line-height: 1.3333;
+  font-weight: 500;
+  letter-spacing: .025em;
+  color: oklch(55.6% 0 0);
+}
+
+.bento-pano-frame {
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 1.125rem;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .25);
+  background-color: #0a0a0a;
+}
+
+/* Estados do DelayedMount, enquanto o 360 não montou. */
+.bento-pano-loading {
+  background-color: rgba(0, 0, 0, .2);
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.bento-pano-spinner {
+  height: 1.5rem;
+  width: 1.5rem;
+  animation: spin 1s linear infinite;
+  border-width: 2px;
+  border-color: rgba(255, 255, 255, .2);
+  border-radius: 9999px;
+  border-top-color: rgba(255, 255, 255, .8);
+}
+
+.bento-pano-fade {
+  width: 100%;
+  height: 100%;
+}
+
+
+/* ═══ 7. CARDS SOCIAIS + VARIANTE MAPA ════════════════════════════ */
+
+/* Card `</>` (sites) — mesmo motivo do .bento-phone: position:relative
+   pro chip "Meus sites"/"Fechar" se ancorar certo, e overflow:visible
+   pro SVG da gaveta não cortar nas bordas do card. */
+.bento-sites {
+  position: relative;
+  overflow: visible;
+}
+
+/* Uma classe só para os cinco ícones (GitHub, Dribbble, Local, Mail,
+   Telefone) — antes eram cinco classes idênticas. */
+.bento-social-icon {
+  height: 2rem;
+  width: 2rem;
+  color: oklch(55.6% 0 0);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .15s;
+}
+
+.group:hover .bento-social-icon {
+  color: #fff;
+}
+
+@media (width >=40rem) {
+  .bento-social-icon {
+    height: 2.5rem;
+    width: 2.5rem;
+  }
+}
+
+/* ── LOCALIZAÇÃO: balão com a cidade ─────────────────────────────
+   Mesma mecânica do balão das ferramentas. O card precisa liberar o
+   overflow (o `overflow-hidden` vem da string cardMotion do JSX) e
+   virar contexto de posicionamento para o balão se ancorar nele. */
+.bento-place {
+  position: relative;
+  overflow: visible;
+}
+
+.bento-place-tip {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  translate: -50% 0.25rem;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.0625rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 0.625rem;
+  background-color: rgba(10, 10, 10, .95);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .4);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s cubic-bezier(.4, 0, .2, 1),
+    translate .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-place:hover .bento-place-tip,
+.bento-place:focus-visible .bento-place-tip {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+.bento-place-tip-city {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.bento-place-tip-state {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, .55);
+}
+
+.bento-place-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  rotate: 45deg;
+  background-color: rgba(10, 10, 10, .95);
+  border-right: 1px solid rgba(255, 255, 255, .1);
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+
+
+/* ── E-MAIL: card clicável + botão de copiar ─────────────────────
+   O <a> ocupa o card inteiro (abre o cliente de e-mail) e o botão de
+   copiar fica por cima, num canto, com z-index maior. */
+.bento-mail {
+  position: relative;
+  overflow: visible;
+}
+
+.bento-mail-link {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bento-mail-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, .05);
+  color: rgba(255, 255, 255, .5);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s cubic-bezier(.4, 0, .2, 1),
+    color .15s cubic-bezier(.4, 0, .2, 1),
+    background-color .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* O botão só aparece no hover do card, para não poluir o ícone. */
+.bento-mail:hover .bento-mail-copy,
+.bento-mail-copy:focus-visible {
+  opacity: 1;
+}
+
+.bento-mail-copy:hover {
+  background-color: rgba(255, 255, 255, .12);
+  color: #fff;
+}
+
+.bento-mail-copy-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* Balão com o endereço — vira "Copiado!" por 2s depois do clique. */
+.bento-mail-tip {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  translate: -50% 0.25rem;
+  z-index: 40;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 0.625rem;
+  background-color: rgba(10, 10, 10, .95);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .4);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s cubic-bezier(.4, 0, .2, 1),
+    translate .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-mail:hover .bento-mail-tip {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+.bento-mail-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  rotate: 45deg;
+  background-color: rgba(10, 10, 10, .95);
+  border-right: 1px solid rgba(255, 255, 255, .1);
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+
+
+/* No preset 2 o card de localização vira um mapa com foto. */
+.bento-map-image {
+  object-fit: cover;
+  opacity: .6;
+  mix-blend-mode: luminosity;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+/* `.bento-place` libera o overflow (ver acima) pro balão de cidade
+   escapar pra cima no preset pequeno — mas isso também tira o corte
+   arredondado herdado do `overflow-hidden` do card, e este retângulo
+   cobre o card INTEIRO (`inset:0`) com cantos héticos por padrão. No
+   rodapé o degradê é quase opaco (.8), então as quinas quadradas do
+   retângulo ficavam visíveis furando por baixo dos cantos arredondados
+   do card — no topo passava despercebido porque o degradê já é
+   transparente ali. O border-radius aqui replica o do card (rounded-2xl
+   = 1rem) pra este retângulo ficar arredondado por conta própria. */
+.bento-map-scrim {
+  background-image: linear-gradient(to top, rgba(0, 0, 0, .8), transparent);
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.bento-map-content {
+  z-index: 10;
+  flex-direction: column;
+  align-items: center;
+  display: flex;
+  position: relative;
+}
+
+.bento-map-pin {
+  margin-bottom: 0.5rem;
+  height: 2.5rem;
+  width: 2.5rem;
+  color: #fff;
+}
+
+.bento-map-label {
+  font-size: .875rem;
+  line-height: 1.4286;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: #fff;
+}
+
+
+/* ═══ 8. CELULAR — CARD E GAVETA (iPhone 3D) ══════════════════════
+   Esta seção tinha sumido do arquivo numa edição anterior (o JSX
+   continuava usando `.bento-phone`/`.bento-fone-palco`, mas as regras
+   correspondentes não existiam mais) — era por isso que o container
+   do celular colapsava e o aparelho aparecia pequeno. Reconstruída
+   aqui, na mesma posição de antes. */
+
+/* position:relative + overflow:visible: precisa disso pra o chip
+   "Fale comigo"/"Fechar" (renderChip, .bento-chip) se ancorar certo
+   e pro SVG da gaveta desenhar sem cortar nas bordas do card. */
+.bento-phone {
+  position: relative;
+  overflow: visible;
+}
+
+/* Mesma estrutura da gaveta do 360: cabeçalho curto em cima e o
+   palco ocupando todo o resto. */
+.bento-fone {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
+
+/* Transparente de propósito: assim aparece o próprio <path> do SVG que
+   desenha a gaveta, e o aparelho parece flutuar sobre ela em vez de
+   dentro de uma caixa. Sem borda e sem sombra pelo mesmo motivo —
+   qualquer uma das duas voltaria a desenhar o contorno do container. */
+.bento-fone-palco {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  background-color: transparent;
+  overflow: hidden;
+}
+
+
+/* ═══ 9. CARD: PROJETOS ═══════════════════════════════════════════ */
+
+/* Estado fechado: só o título. */
+/* flex-direction:column (não a linha única de antes, com o rótulo
+   pequeno "Projects"): agora carrega título GRANDE + a linha
+   "Arraste os cards..." embaixo, empilhados — precisa virar coluna
+   pra não ficar os dois lado a lado. align-items:flex-start porque o
+   .bento-projects-titles (versão do estado aberto) é centralizado,
+   mas aqui, no estado fechado, o texto acompanha o alinhamento à
+   esquerda do resto do card. */
+/* padding-bottom: reserva o espaço do chip "Ver tudo" (fixo perto do
+   rodapé do card, position:absolute — não participa deste flex).
+   Sem isso, centralizar o texto usava a altura do card INTEIRA como
+   referência, incluindo essa faixa reservada pro chip — o texto ficava
+   quase encostando nele, sem respiro, e visualmente parecia "puxado
+   pra cima" mesmo estando centralizado matematicamente. */
+.bento-projects-head {
+  z-index: 10;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding-bottom: 1rem;
+  display: flex;
+  position: relative;
+  margin: 30px;
+}
+
+.bento-projects-label {
+  pointer-events: none;
+  font-size: .875rem;
+  line-height: 1.4286;
+  font-weight: 500;
+  color: oklch(55.6% 0 0);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .15s;
+}
+
+.group:hover .bento-projects-label {
+  color: #fff;
+}
+
+@media (width >=40rem) {
+  .bento-projects-label {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
+/* Estado aberto: setas de navegação das gavetas.
+   padding-bottom: mesmo motivo do .bento-projects-head — reserva o
+   espaço do chip "Fechar" (fixo perto do rodapé, fora deste flex),
+   pra centralizar o texto na área que sobra de verdade, não na altura
+   inteira do card. */
+.bento-projects-nav {
+  z-index: 10;
+  width: 100%;
+  padding-inline: 1rem;
+  padding-bottom: 3rem;
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+  position: absolute;
+  inset: 0;
+}
+
+@media (width >=40rem) {
+  .bento-projects-nav {
+    padding-inline: 3rem;
+  }
+}
+
+.bento-projects-titles {
+  pointer-events: none;
+  text-align: center;
+  -webkit-user-select: none;
+  user-select: none;
+  flex-direction: column;
+  align-items: center;
+  display: flex;
+}
+
+.bento-projects-title {
+  font-family: Outfit, sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  color: #fff;
+}
+
+@media (width >=40rem) {
+  .bento-projects-title {
+    font-size: 1.875rem;
+    line-height: 1.2;
+  }
+}
+
+.bento-projects-sub {
+  margin-top: .25rem;
+  font-size: .75rem;
+  line-height: 1.3333;
+  color: oklch(70.8% 0 0);
+}
+
+@media (width >=40rem) {
+  .bento-projects-sub {
+    margin-top: 0.5rem;
+    font-size: .875rem;
+    line-height: 1.4286;
+  }
+}
+
+/* Deck de mini-cards arrastáveis empilhados no centro do card. */
+.bento-deck {
+  pointer-events: none;
+  z-index: 20;
+  border-radius: 1.125rem;
+  position: absolute;
+  inset: 0;
+}
+
+.bento-deck-area {
+  pointer-events: auto;
+  position: absolute;
+  inset: 0;
+}
+
+
+/* ═══ 10. GAVETA DOS PROJETOS: CASE ════════════════════════════════ */
+
+.bento-case-scroll {
+  position: relative;
+  /* âncora do .bento-case-pager (overlay fixo) */
+  width: 100%;
+  height: 100%;
+  padding-inline: 1rem;
+  padding-block: 1.5rem;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Coluna com TODOS os sites empilhados, um embaixo do outro. Ao rolar
+   o mouse (handleWheelSites), ela desliza pra cima/baixo (translateY
+   calculado no JSX a partir da altura real de um card) — o
+   overflow:hidden do .bento-case-scroll acima é o que corta o card de
+   baixo na metade, criando o efeito "espiadinha" (como a Netflix faz
+   no catálogo: dá pra ver que tem mais um pedaço, sem mostrar inteiro). */
+.bento-case-track {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  display: flex;
+  gap: 1.5rem;
+}
+
+/* Cada slot mede 82% da altura da gaveta (não 100%): são esses 18%
+   sobrando + o gap acima que aparecem como a pontinha do próximo card
+   espiando embaixo. */
+.bento-case-track-item {
+  flex: none;
+  width: 100%;
+  height: 82%;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+/* CELULAR: rolagem nativa em vez de paginação.
+   No desktop a coluna desliza por transform, acionada pelo evento
+   `wheel` — que um dedo nunca dispara. O conteúdo (medido: 1304px)
+   ficava preso dentro de 814px com overflow escondido, e o segundo
+   item era simplesmente inalcançável. Aqui o container passa a rolar
+   de verdade e a coluna cresce conforme o conteúdo. */
+.bento-case-scroll--rolavel {
+  overflow-y: auto;
+  overflow-x: hidden;
+  justify-content: flex-start;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* impede o "puxão" rolar a página atrás do painel */
+}
+
+.bento-case-scroll--rolavel .bento-case-track {
+  height: auto;
+}
+
+/* Altura por conteúdo, com um piso generoso: `height: 82%` valia como
+   fatia da gaveta na paginação; numa lista que rola, ele espremeria
+   todos os cards na altura da tela. */
+.bento-case-scroll--rolavel .bento-case-track-item {
+  height: auto;
+  min-height: 26rem;
+}
+
+.bento-case-scroll--rolavel .bento-case {
+  height: auto;
+  width: 100%;
+  min-height: 26rem;
+}
+
+/* Usada pela gaveta de PROJECTS (não tem a coluna que desliza dos
+   Sites, é sempre um card por vez) — só centraliza o .bento-case
+   dentro da gaveta, sem reservar espaço de "espiadinha". */
+/* align-items:stretch (não center): com center sobrava um vão vazio
+   simétrico em cima E embaixo do card (a altura fixa de 96% do
+   .bento-case, centralizada numa fatia maior) — stretch faz o card
+   esticar pra ocupar a fatia inteira, sem sobra. */
+.bento-case-single {
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: stretch;
+  display: flex;
+}
+
+@media (width >=40rem) {
+  .bento-case-scroll {
+    padding-inline: 1.5rem;
+  }
+}
+
+/* SEM overflow:hidden aqui de propósito: as setas do carrossel
+   (dentro de .bento-case-media) precisam poder passar da borda do
+   card pra "flutuar" do lado de fora dele. Quem arredonda o visual
+   agora é cada pedaço por conta própria — .bento-case-media (topo) e
+   .bento-case-body (base) — em vez do corte deste elemento pai. */
+.bento-case {
+  border: 1px solid rgba(255, 255, 255, .05);
+  border-radius: 1.375rem;
+  flex-direction: column;
+  flex: none;
+  width: 95%;
+  height: 94%;
+  display: flex;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .25);
+  background-color: #141414;
+}
+
+/* Variante "poster" (gaveta de Projects): ocupa a fatia (.bento-case-
+   single) inteira na altura (sem o respiro de 77% que a versão
+   clássica usa — é isso que deixa a foto/vídeo grande), e mais
+   ESTREITO que o padrão (78%, não 95%) na largura: as fotos/vídeos da
+   marca são praticamente todos verticais (retrato), e um card largo
+   com `cover` (ver .bento-case-media-img/-video abaixo) cortava demais
+   as laterais pra preencher uma caixa quase quadrada. Mais estreito =
+   a proporção do card fica parecida com a das fotos, então o corte do
+   `cover` é mínimo. */
+.bento-case--poster {
+  width: 90%;
+  height: 100%;
+}
+
+/* Área da thumbnail/vídeo do projeto. flex:1 (não flex:0 — com 0 e sem
+   flex-basis explícita a área colapsa pra altura zero, já que a
+   <img> dentro é width/height:100% DELA, e 100% de zero é zero).
+   border-radius só em cima (bate com o arredondamento do .bento-case):
+   sem o overflow:hidden do pai, é essa borda que faz o fundo #1a1a1a
+   continuar parecendo encaixado no card, e não um retângulo reto por
+   cima dos cantos redondos. SEM overflow:hidden: é o que deixa as
+   setas (filhas daqui) vazarem pros lados. */
+/* min-height:0 é o pulo do gato aqui: um item flex com `flex:1` por
+   padrão NUNCA encolhe menor que o "tamanho mínimo de conteúdo" dos
+   filhos — e uma foto vertical ou um vídeo de resolução alta tem uma
+   proporção intrínseca "alta" que o navegador respeita nesse cálculo,
+   IGNORANDO o `width/height:100%` do <img>/<video> lá dentro. Resultado
+   sem isso: a cada foto/vídeo diferente a caixa da mídia mudava de
+   altura sozinha, empurrando o texto do card pra baixo (e pra fora,
+   já que a seção 7 tirou o overflow:hidden do .bento-case). */
+.bento-case-media {
+  background-color: #1a1a1a;
+  flex: 1;
+  min-height: 0;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  display: flex;
+  position: relative;
+  border-radius: 1.375rem
+}
+
+/* Print real do site (usada pela gaveta de Sites). `contain`, não
+   `cover`: as 4 capturas da Clydes têm proporções
+   diferentes entre si (uma é bem mais estreita que as outras), e com
+   `cover` cada uma cortava de um jeito — inclusive cortando o título
+   "CLYDES" da primeira. `contain` sempre mostra o print inteiro; a
+   faixa que sobra nas bordas usa o mesmo cinza-escuro do fundo do
+   `.bento-case-media`, então não chama atenção como uma barra preta. */
+/* width: 100% (não mais calc(100% - 6rem)): aquela margem só existia
+   pra sobrar espaço pras setas DENTRO da foto — agora que elas moraram
+   pra fora do card, a imagem pode usar a largura toda. */
+/* Envolve a mídia atual do carrossel (o motion.div que troca com fade
+   ao avançar/voltar) — antes essa animação estava direto no <img>, mas
+   com vídeo entrando na mistura (ver `ehVideo` no SiteCase) o wrapper
+   precisou virar um elemento neutro que aceita tanto <img> quanto
+   <iframe> dentro. */
+/* overflow:hidden: só entra em jogo pro vídeo "sem-corte" logo abaixo,
+   que agora pode crescer (`scale`) além do próprio quadro — sem isso o
+   excesso vazaria por cima dos vizinhos. Não afeta as setas do
+   carrossel (.bento-case-photo-arrow): elas são IRMÃS deste elemento
+   dentro de .bento-case-media, não filhas dele. */
+.bento-case-media-slide {
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  overflow: hidden;
+}
+
+.bento-case-media-img {
+  width: 100%;
+  height: 100%;
+  margin-inline: auto;
+  object-fit: contain;
+  border-radius: 23px;
+}
+
+/* Vídeo embedado (ex.: link do files.fm) — preenche a mesma caixa que
+   a foto preenchia, sem a moldura branca (border:0) que o embed padrão
+   do provedor manda por padrão. */
+/* object-fit:contain só afeta a tag <video> (arquivo direto) — em um
+   <iframe> (embed de outro site) a propriedade não faz nada, o próprio
+   player de dentro dele decide como preencher o espaço. */
+.bento-case-media-video {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: contain;
+  border-radius: 21px;
+}
+
+/* Variante "poster": `cover`, não `contain`. Ao contrário dos prints
+   de site (onde cortar corta texto/UI importante), aqui é foto/vídeo
+   de moda — sobrar uma barra vazia (a "borda" que sobrava com contain,
+   quando a proporção da mídia não batia exatamente com a do card) fica
+   pior do que perder um pouco da margem da imagem. `cover` preenche o
+   card inteiro sempre, sem barra, cortando só o excesso. */
+.bento-case--poster .bento-case-media-img,
+.bento-case--poster .bento-case-media-video {
+  object-fit: cover;
+}
+
+/* object-position:top: dentro da caixa (já limitada pelo
+   .bento-case-video-wrap--sem-corte abaixo), o corte do `cover` sobra
+   embaixo — que a faixa de texto já cobre — em vez de cortar dos dois
+   lados igual. */
+.bento-case--poster .bento-case-media-video--sem-corte {
+  object-fit: cover;
+  object-position: center top;
+}
+
+/* ── PLAYER PRÓPRIO DO ARQUIVO DE VÍDEO (VideoArquivoPlayer) ────── */
+
+.bento-case-video-wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+}
+
+/* `semCorte` NÃO É "sem cortar" de verdade — o nome ficou de uma
+   primeira tentativa com `contain` (aí sim mostrava tudo, sem cortar
+   nada); o usuário viu e pediu o oposto: maior, mesmo cortando um
+   pouco. `cover` no tamanho CHEIO do card (100% de altura) resolvia o
+   vão, mas pra preencher uma caixa tão mais alta que o vídeo ele
+   precisava dar um zoom enorme — só um punhado de pixels de uma pétala
+   de flor apareciam. A correção: LIMITAR a altura dessa caixa a algo
+   parecido com a proporção do próprio vídeo, então o `cover` só
+   precisa cortar um pouco pra preencher, não dar um zoom absurdo.
+   align-self:flex-start: o pai (.bento-case-media-slide) centraliza
+   verticalmente por padrão — sem isso, limitar a altura reintroduziria
+   um vão em cima (voltando ao problema original). */
+.bento-case-video-wrap--sem-corte {
+  height: 62%;
+  align-self: flex-start;
+}
+
+/* Grande e no CENTRO — longe da faixa de baixo, onde mora o texto do
+   card (.bento-case-body) no card poster. Some assim que toca (o
+   componente só monta este botão quando pausado). */
+.bento-case-video-play {
+  width: 4rem;
+  height: 4rem;
+  border: 1px solid rgba(255, 255, 255, .2);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  z-index: 12;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, .45);
+  color: #fff;
+  backdrop-filter: blur(12px);
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1),
+    scale .15s cubic-bezier(.4, 0, .2, 1),
+    opacity .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-case-video-play:hover {
+  background-color: rgba(0, 0, 0, .6);
+  scale: 1.06;
+}
+
+/* opacity, não display:none/desmontar: o botão precisa continuar
+   "de verdade" no DOM enquanto o vídeo toca — ver o comentário no JSX
+   (VideoArquivoPlayer) sobre o cursor customizado travando quando o
+   alvo do hover é destruído no meio do clique. */
+/* Enquanto toca ele vira PAUSE e some — mas continua CLICÁVEL. O
+   `pointer-events: none` que existia aqui era o que impedia de pausar:
+   no desktop dava pra clicar no vídeo, mas no celular, sem hover pra
+   revelar nada, não sobrava saída. Reaparece ao passar o dedo/mouse
+   pela área do vídeo. */
+.bento-case-video-play.esta-tocando {
+  opacity: 0;
+}
+
+.bento-case-video-wrap:hover .bento-case-video-play.esta-tocando,
+.bento-case-video-play.esta-tocando:focus-visible {
+  opacity: 1;
+}
+
+/* Em tela de toque não existe hover, então o botão fica sempre visível
+   (translúcido pra não tapar o vídeo). */
+@media (pointer: coarse), (width < 40rem) {
+  .bento-case-video-play.esta-tocando {
+    opacity: .55;
+  }
+}
+
+/* Mudo e tela cheia lado a lado, no canto de cima — longe da faixa de
+   texto que o card desenha por cima da parte de baixo do vídeo. */
+.bento-case-video-controles {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 12;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bento-case-video-botao {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, .45);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1),
+    scale .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-case-video-botao:hover {
+  background-color: rgba(255, 255, 255, .2);
+  scale: 1.06;
+}
+
+@media (pointer: coarse), (width < 40rem) {
+  .bento-case-video-botao {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+.bento-case-video-play-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  /* 2px pra direita: o triângulo do ícone tem o "peso" visual pendendo
+     pra esquerda — sem isso, parece descentralizado dentro do círculo. */
+  margin-left: 2px;
+}
+
+/* Canto de CIMA, não embaixo: é o único controle que sobra fora do
+   botão de play central, e embaixo é exatamente a faixa que o texto do
+   card ocupa. */
+.bento-case-video-mute {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid rgba(255, 255, 255, .2);
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 12;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, .45);
+  color: #fff;
+  backdrop-filter: blur(12px);
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-case-video-mute:hover {
+  background-color: rgba(0, 0, 0, .6);
+}
+
+.bento-case-video-mute-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* pointer-events:none: é só um brilho decorativo por cima da mídia —
+   sem isso, ele intercepta o clique ANTES de chegar no player de vídeo
+   (iframe do files.fm) e trava play/pause/seek. Nunca importou pras
+   imagens (nada clicável por baixo), mas pro vídeo é obrigatório. */
+.bento-case-media-tint {
+  background-image: linear-gradient(to bottom right, rgba(255, 255, 255, .05), transparent);
+  position: absolute;
+  inset: 0;
+  border-radius: 21px;
+  pointer-events: none;
+}
+
+/* ── CARROSSEL DE FOTOS (dentro de um site) ──────────────────────
+   Só existe quando o site tem mais de uma imagem — ver `temVariasFotos`
+   no SiteCase. Mesmo visual das setas/bolinhas do modal de música do
+   360 (.pano-modal-arrow/.pano-modal-dot), para manter a mesma
+   linguagem de "isso é um carrossel" em qualquer lugar do site. */
+.bento-case-photo-arrow {
+  border: 1px solid rgba(255, 255, 255, .2);
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 15;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, .1);
+  padding: 0.625rem;
+  color: #fff;
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  transition: opacity .2s cubic-bezier(.4, 0, .2, 1),
+    background-color .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.group:hover .bento-case-photo-arrow {
+  opacity: 1;
+}
+
+.bento-case-photo-arrow:hover {
+  background-color: rgba(255, 255, 255, .2);
+}
+
+/* TELA DE TOQUE: revelar a seta no `:hover` é uma regra que nunca
+   dispara num dedo — no celular elas ficavam com `opacity: 0` e não
+   havia como trocar de foto. `pointer: coarse` pega os aparelhos cujo
+   ponteiro principal é o dedo; a largura entra junto porque um Chrome
+   de desktop numa janela estreita reporta `pointer: fine`, e sem ela
+   essas regras ficavam impossíveis de testar fora de um telefone.
+   Também crescem: 40px era o desenho pra mouse, e o mínimo confortável
+   pra toque é ~44px. */
+@media (pointer: coarse), (width < 40rem) {
+  .bento-case-photo-arrow {
+    opacity: 1;
+    padding: 0.75rem;
+  }
+
+  .bento-case-photo-arrow--prev {
+    left: 0.25rem;
+  }
+
+  .bento-case-photo-arrow--next {
+    right: 0.25rem;
+  }
+
+  .bento-case-photo-arrow-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  /* A bolinha em si continua pequena (é um indicador), mas ganha uma
+     área de toque invisível em volta via ::after — assim dá pra acertar
+     com o dedo sem engordar o visual. */
+  .bento-case-photo-dots {
+    gap: 0.75rem;
+    bottom: 1rem;
+  }
+
+  .bento-case-photo-dot {
+    position: relative;
+  }
+
+  .bento-case-photo-dot::after {
+    content: "";
+    position: absolute;
+    inset: -1rem;
+  }
+}
+
+/* Negativo de propósito: agora que .bento-case/.bento-case-media não
+   cortam mais o que passa da borda (ver os comentários lá em cima),
+   a seta pode flutuar de verdade pra fora do card, meio pra dentro
+   meio pra fora — em vez de ficar encostada na borda por dentro. */
+.bento-case-photo-arrow--prev {
+  left: -1.25rem;
+}
+
+.bento-case-photo-arrow--next {
+  right: -1.25rem;
+}
+
+.bento-case-photo-arrow-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.bento-case-photo-dots {
+  position: absolute;
+  bottom: 0.875rem;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 15;
+  display: flex;
+  gap: 0.375rem;
+}
+
+.bento-case-photo-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border: none;
+  border-radius: 9999px;
+  padding: 0;
+  background-color: rgba(255, 255, 255, .35);
+  cursor: pointer;
+  transition: background-color .3s cubic-bezier(.4, 0, .2, 1),
+    scale .3s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-case-photo-dot.esta-ativo {
+  background-color: #fff;
+  scale: 1.25;
+}
+
+/* ── PAGINADOR DE SITES (Clydes → próximo → ...) ─────────────────
+   Fica fixo no TOPO da GAVETA (não do card individual): rolar o mouse
+   ali dentro troca de site — ver handleWheelSites no JSX.
+   Em cima, não embaixo: a pontinha do próximo card já "espiando" no
+   rodapé (efeito Netflix, ver .bento-case-track-item) é o aviso visual
+   de que tem mais pra rolar — um texto ali embaixo só brigaria com essa
+   pontinha por espaço. */
+/* Fundo de pílula (mesma receita do .bento-chip usado no resto do
+   site): o card ali embaixo não chega até o topo da gaveta (fica com
+   respiro/centralizado dentro da própria fatia), então sem um fundo
+   próprio as bolinhas cairiam soltas sobre o fundo da PÁGINA — ilegível
+   em algumas cores. */
+.bento-case-pager {
+  border: 1px solid rgba(255, 255, 255, .1);
+  position: absolute;
+  top: 0.75rem;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 20;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  display: flex;
+  background-color: rgba(0, 0, 0, .4);
+  padding-inline: 0.625rem;
+  padding-block: 0.375rem;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.bento-case-pager-dots {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.bento-case-pager-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, .25);
+  transition: background-color .3s cubic-bezier(.4, 0, .2, 1),
+    scale .3s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-case-pager-dot.esta-ativo {
+  background-color: #fff;
+  scale: 1.25;
+}
+
+.bento-case-media-empty {
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: .3;
+  flex-direction: column;
+  display: flex;
+  position: absolute;
+  inset: 0;
+  transition: all .7s cubic-bezier(.4, 0, .2, 1);
+}
+
+.group:hover .bento-case-media-empty {
+  scale: 1.05;
+  opacity: .5;
+}
+
+.bento-case-media-icon {
+  height: 4rem;
+  width: 4rem;
+  color: #fff;
+}
+
+.bento-case-media-text {
+  font-size: .875rem;
+  line-height: 1.4286;
+  color: rgba(255, 255, 255, .6);
+}
+
+/* Texto do case, abaixo da mídia (versão clássica — gaveta de Sites).
+   border-radius embaixo (bate com o .bento-case): mesmo motivo do
+   .bento-case-media em cima — sem overflow:hidden no pai, esta borda
+   é quem faz o fundo do texto continuar parecendo dentro do card. */
+.bento-case-body {
+  gap: 0.75rem;
+  flex-direction: column;
+  flex-shrink: 0;
+  display: flex;
+  background-image: linear-gradient(to top, #111, #141414);
+  padding-inline: 2.5rem;
+  padding-block: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, .05);
+  border-radius: 0 0 1.375rem 1.375rem;
+}
+
+/* Variante "poster" (gaveta de Projects): o texto vira um OVERLAY em
+   cima da mídia (position:absolute), não mais uma faixa sólida
+   embaixo dela — é o que deixa a foto/vídeo ocupar o card inteiro (a
+   .bento-case-media, único filho flex que sobra, estica sozinha pra
+   altura toda) em vez de dividir o espaço com uma caixa de texto de
+   fundo opaco. O degradê (transparente no topo, escuro embaixo) é o
+   que garante o texto legível por cima de qualquer imagem, clara ou
+   escura.
+   pointer-events:none: sendo um overlay por cima da mídia inteira,
+   sem isso ele intercepta TODO clique nessa faixa de baixo — inclusive
+   os controles nativos do <video> (play/pause), que moram bem ali. O
+   único filho realmente clicável (.bento-case-cta) religa o próprio
+   pointer-events, então continua funcionando normalmente. */
+.bento-case--poster .bento-case-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  flex-shrink: initial;
+  background-image: linear-gradient(to top, rgba(10, 10, 10, .95) 0%, rgba(10, 10, 10, .85) 45%, rgba(10, 10, 10, .35) 80%, transparent 100%);
+  padding-top: 5rem;
+  padding-bottom: 2rem;
+  border-top: none;
+  pointer-events: none;
+}
+
+.bento-case--poster .bento-case-cta {
+  pointer-events: auto;
+}
+
+.bento-case-meta {
+  margin-bottom: .25rem;
+  align-items: center;
+  gap: 0.75rem;
+  display: flex;
+}
+
+.bento-case-tag {
+  background-color: rgba(255, 255, 255, .1);
+  border-radius: 9999px;
+  padding-inline: 0.75rem;
+  padding-block: 0.375rem;
+  font-size: .75rem;
+  line-height: 1.3333;
+  font-weight: 600;
+  letter-spacing: .025em;
+  color: #fff;
+}
+
+.bento-case-year {
+  font-size: .75rem;
+  line-height: 1.3333;
+  font-weight: 500;
+  color: rgba(255, 255, 255, .4);
+}
+
+.bento-case-title {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  color: #fff;
+}
+
+.bento-case-desc {
+  margin-top: .25rem;
+  -webkit-line-clamp: 2;
+  font-size: .875rem;
+  line-height: 1.625;
+  color: oklch(70.8% 0 0);
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  overflow: hidden;
+}
+
+/* Usada pela gaveta de Sites: com 1 item só (por enquanto) sobra altura
+   na gaveta, então o texto não precisa cortar em 2 linhas como no deck
+   de Projects, que tem 6 cards competindo pelo mesmo espaço. */
+.bento-case-desc--full {
+  -webkit-line-clamp: unset;
+  display: block;
+  overflow: visible;
+}
+
+.bento-case-cta {
+  margin-top: 1rem;
+  cursor: pointer;
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+.bento-case-cta-text {
+  font-size: .875rem;
+  line-height: 1.4286;
+  font-weight: 600;
+  color: #fff;
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .15s;
+}
+
+.group\/btn:hover .bento-case-cta-text {
+  color: rgba(255, 255, 255, .8);
+}
+
+.bento-case-cta-icon {
+  height: 1rem;
+  width: 1rem;
+  color: rgba(255, 255, 255, .5);
+  transition: all .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.group\/btn:hover .bento-case-cta-icon {
+  translate: .25rem -0.25rem;
+  color: #fff;
+}
+
+
+/* ═══ 11. CARD: SERVICES ══════════════════════════════════════════ */
+
+.bento-services-label {
+  top: 2rem;
+  left: 2rem;
+  z-index: 10;
+  text-align: left;
+  width: 100%;
+  font-size: .875rem;
+  line-height: 1.4286;
+  font-weight: 500;
+  color: oklch(55.6% 0 0);
+  position: absolute;
+}
+
+@media (width >=40rem) {
+  .bento-services-label {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
+/* Os chips ficam LADO A LADO e quebram linha sozinhos.
+
+   Antes cada um era `position: absolute` com coordenadas e rotação vindas
+   do JSX, e eles se sobrepunham. Agora é flex-wrap: o navegador acomoda,
+   e incluir um serviço novo não exige recalcular posição de nada.
+
+   `align-content: flex-start` empilha as linhas a partir do topo — sem
+   isso, com duas linhas o flex distribui o espaço vertical e desalinha. */
+.bento-services-area {
+  position: absolute;
+  inset: 1.25rem;
+  /* Encosta logo abaixo do rótulo "Serviços" — medido: a 3rem os chips
+     subiam 8px POR CIMA dele. */
+  top: 3.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.bento-service-chip {
+  border: 1px solid rgba(255, 255, 255, .1);
+  cursor: default;
+  border-radius: 9999px;
+  /* Cresceu (era .6875rem/0.75rem/0.3125rem): estava legível demais só
+     de perto. O card mais BAIXO continua coberto pelo @container lá
+     embaixo, que reaperta tudo quando a altura não dá. */
+  padding-inline: 0.75rem;
+  padding-block: 0.375rem;
+  font-size: .6875rem;
+  line-height: 1.4;
+  font-weight: 500;
+  white-space: nowrap;
+  color: #fff;
+  background-color: #2a2a2a;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .1), 0 4px 6px -4px rgba(0, 0, 0, .1);
+  transition-property: transform, translate, scale, rotate, background-color;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .15s;
+}
+
+.bento-service-chip:hover {
+  background-color: #343434;
+  scale: 1.06;
+}
+
+/* Card baixo (o preset "largo" dá a Services só row-span-4 em vez de 6):
+   aperta os insets do label/chips e encolhe um fio a fonte, para os 7
+   chips caberem sem estourar por baixo. */
+@container services-card (max-height: 100px) {
+  /* O rótulo também encolhe aqui. A 16px (o tamanho normal) ele descia
+     até 45px, enquanto os chips começavam em 41 — 4px de sobreposição
+     medidos. Menor, ele libera a faixa de cima. */
+  .bento-services-label {
+    top: 1.25rem;
+    left: 1.25rem;
+    font-size: 0.8125rem;
+  }
+
+  .bento-services-area {
+    inset: 1rem;
+    top: 2.75rem;
+    gap: 0.3125rem;
+  }
+
+  .bento-service-chip {
+    padding-inline: 0.625rem;
+    padding-block: 0.25rem;
+    font-size: 0.625rem;
+  }
+}
+
+
+/* ═══ 12. CARD: TOOLS ═════════════════════════════════════════════ */
+
+.bento-tools-label {
+  width: 100%;
+  font-size: .875rem;
+  line-height: 1.4286;
+  font-weight: 500;
+  color: oklch(55.6% 0 0);
+}
+
+@media (width >=40rem) {
+  .bento-tools-label {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
+/* O card precisa deixar o balão escapar. O `overflow-hidden` vem da string
+   `cardMotion` do JSX; como este arquivo é CSS sem @layer, ele ganha da
+   utility do Tailwind e libera o estouro só neste card. */
+/* Padding menor que o 2.5rem do .bento-card--stack: as células agora
+   precisam de largura pra caber "Intermediário" embaixo do ícone, e os
+   40px de respiro de cada lado comiam justo isso. (Vem DEPOIS daquela
+   regra no arquivo, então ganha sem precisar de !important.) */
+.bento-card--tools {
+  overflow: visible;
+  container-type: size;
+  container-name: tools-card;
+  padding: 1.5rem;
+}
+
+/* 4 colunas × 2 linhas, em FLUXO NORMAL logo abaixo do rótulo.
+
+   Antes era `position: absolute; bottom: 2rem; max-width: 200px` com 2
+   colunas — os quadradinhos ficavam grandes demais, subiam por cima do
+   "Tools I use" e vazavam do card. Em fluxo, o rótulo empurra a grade
+   para baixo e nada se sobrepõe. */
+.bento-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.875rem;
+}
+
+/* A CÉLULA: empilha o quadradinho colorido e o nível embaixo. Ela
+   mesma não tem mais fundo/borda — quem tem é o .bento-tool-quadro. */
+.bento-tool {
+  position: relative;
+  /* âncora do balão */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  transition: scale .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* O quadradinho em si. `width` fixo (não 100%): a célula ficou mais
+   LARGA que alta pra caber a palavra "Intermediário" embaixo, e com
+   width:100% + aspect-ratio:1 o quadrado acompanharia essa largura e
+   estouraria a altura do card. */
+.bento-tool-quadro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.375rem;
+  height: 2.375rem;
+  border: 1px solid rgba(255, 255, 255, .05);
+  border-radius: 0.875rem;
+  background-color: #252525;
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, .05);
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-tool:hover,
+.bento-tool:focus-visible {
+  scale: 1.08;
+  z-index: 30;
+  /* passa na frente dos vizinhos ao crescer */
+  outline: none;
+}
+
+.bento-tool:hover .bento-tool-quadro,
+.bento-tool:focus-visible .bento-tool-quadro {
+  background-color: #303030;
+}
+
+/* O nível, embaixo do ícone. `nowrap`: a coluna foi dimensionada pra
+   caber a palavra mais longa numa linha só ("Intermediário", medida em
+   50px a 8px de fonte, contra ~58px de coluna) — deixar quebrar
+   desalinharia a altura das duas fileiras. */
+.bento-tool-nivel {
+  font-size: 0.5rem;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: .01em;
+  text-align: center;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, .45);
+}
+
+.bento-tool-text {
+  font-size: 0.9375rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+/* ── BALÃO DE NÍVEL ──────────────────────────────────────────────
+   Abre ACIMA do quadradinho. `white-space: nowrap` + `translate: -50%`
+   centralizam sem precisar saber a largura do texto de antemão. */
+.bento-tool-tip {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  translate: -50% 0.25rem;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.0625rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 0.625rem;
+  background-color: rgba(10, 10, 10, .95);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .4);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  /* o balão nunca rouba o hover do quadradinho */
+  transition: opacity .15s cubic-bezier(.4, 0, .2, 1),
+    translate .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-tool:hover .bento-tool-tip,
+.bento-tool:focus-visible .bento-tool-tip {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+.bento-tool-tip-name {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.bento-tool-tip-level {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, .55);
+}
+
+/* Bico do balão, apontando para o quadradinho. */
+.bento-tool-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  rotate: 45deg;
+  background-color: rgba(10, 10, 10, .95);
+  border-right: 1px solid rgba(255, 255, 255, .1);
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+
+/* SEGUNDA LINHA (itens 5 a 8): o balão abre para BAIXO.
+   Abrindo para cima ele cairia em cima dos quadradinhos da linha de cima e
+   os esconderia justo quando você quer comparar. Para baixo ele sai pela
+   folga do card, sem tapar nada. */
+.bento-tool:nth-child(n+5) .bento-tool-tip {
+  bottom: auto;
+  top: calc(100% + 0.5rem);
+  translate: -50% -0.25rem;
+}
+
+.bento-tool:nth-child(n+5):hover .bento-tool-tip,
+.bento-tool:nth-child(n+5):focus-visible .bento-tool-tip {
+  translate: -50% 0;
+}
+
+/* ...e o bico vira para o outro lado. */
+.bento-tool:nth-child(n+5) .bento-tool-tip::after {
+  top: auto;
+  bottom: 100%;
+  translate: -50% 50%;
+  border-right: none;
+  border-bottom: none;
+  border-left: 1px solid rgba(255, 255, 255, .1);
+  border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+/* Card baixo (o preset "mapa" dá a Tools só row-span-5 em vez de 6): os
+   quadradinhos são quadrados (aspect-ratio:1) e seu tamanho segue a
+   LARGURA do card, então numa fileira mais baixa a grade de 2 linhas
+   não cabia na altura sobrando — e como o card precisa de
+   `overflow:visible` (pro balão de nível escapar), o excesso vazava
+   pra fora dele em vez de ser cortado. Trava um tamanho fixo menor
+   pros quadradinhos só quando o card fica baixo, em vez do tamanho
+   fluido de sempre. */
+@container tools-card (max-height: 200px) {
+  .bento-tools-label {
+    font-size: 0.8125rem;
+  }
+
+  .bento-tools-grid {
+    gap: 0.5rem;
+    margin-top: 0.625rem;
+  }
+
+  /* Só o quadradinho encolhe; a COLUNA continua larga, senão o nível
+     embaixo não teria onde caber. */
+  .bento-tool-quadro {
+    width: 2.125rem;
+    height: 2.125rem;
+  }
+}
+
+
+/* ═══ 12b. GAVETA: COMO EU TRABALHO (processo) ════════════════════
+   Reaproveita o .bento-pano-head (o mesmo cabeçalho título+dica das
+   gavetas do 360 e do celular) e só acrescenta a lista numerada. */
+
+.bento-processo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* deixa a lista encolher e rolar em vez de estourar a gaveta */
+}
+
+/* Superfície própria, mesmo padrão do .bento-pano-frame (gaveta do 360)
+   e do .bento-case (gaveta dos sites): a gaveta em si é uma CASCA
+   transparente — quem a desenha é o <path> do SVG, que roda a 80% de
+   opacidade. Nas outras gavetas o conteúdo (panorama, fotos) já é opaco
+   e cobre isso; esta é só texto, e sem um fundo próprio as letras
+   ficavam lavadas sempre que a faixa clara da seda passava atrás. */
+.bento-processo-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 0;
+  list-style: none;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 1.125rem;
+  background-color: #0a0a0a;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .25);
+}
+
+.bento-processo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+/* O número fica numa coluna fixa pra todos os textos alinharem no
+   mesmo eixo, independente de ser "01" ou "05". */
+.bento-processo-num {
+  flex: 0 0 auto;
+  width: 1.75rem;
+  padding-top: 0.0625rem;
+  font-family: Outfit, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: rgba(255, 255, 255, .28);
+}
+
+.bento-processo-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.bento-processo-titulo {
+  font-family: Outfit, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: #fff;
+}
+
+.bento-processo-texto {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: oklch(70.8% 0 0);
+}
+
+
+/* ═══ 13. CARD: CREDENCIAIS (certificados e formação) ═════════════ */
+
+.bento-credentials {
+  container-type: size;
+  container-name: credentials-card;
+}
+
+.bento-credentials-title {
+  margin-bottom: 0.625rem;
+  font-family: Outfit, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #fff;
+}
+
+@media (width >=40rem) {
+  .bento-credentials-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Chips que quebram linha sozinhos — mesmo padrão do card Services.
+   O detalhe (instituição/status) vive no balão de hover, não numa
+   segunda linha do chip: é isso que troca "6 blocos de 2 linhas" por
+   "6 pílulas de 1 linha só", a mudança que resolve o "parece poluído". */
+.bento-credentials-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.bento-credentials-chip {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, .1);
+  cursor: default;
+  border-radius: 9999px;
+  padding-inline: 0.75rem;
+  padding-block: 0.375rem;
+  font-size: .6875rem;
+  line-height: 1.4;
+  font-weight: 500;
+  white-space: nowrap;
+  color: #fff;
+  background-color: #2a2a2a;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .1), 0 4px 6px -4px rgba(0, 0, 0, .1);
+  transition-property: transform, translate, scale, rotate, background-color;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .15s;
+}
+
+.bento-credentials-chip:hover,
+.bento-credentials-chip:focus-visible {
+  background-color: #343434;
+  scale: 1.06;
+  z-index: 20;
+  outline: none;
+}
+
+/* Balão do detalhe — mesma peça visual do balão das Tools (bico incluído),
+   sempre abrindo para CIMA porque este card fica na parte de baixo do
+   grid em todos os presets. */
+.bento-credentials-tip {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  translate: -50% 0.25rem;
+  z-index: 40;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 0.625rem;
+  background-color: rgba(10, 10, 10, .95);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .4);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, .85);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s cubic-bezier(.4, 0, .2, 1),
+    translate .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.bento-credentials-chip:hover .bento-credentials-tip,
+.bento-credentials-chip:focus-visible .bento-credentials-tip {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+.bento-credentials-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  rotate: 45deg;
+  background-color: rgba(10, 10, 10, .95);
+  border-right: 1px solid rgba(255, 255, 255, .1);
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+
+/* Card baixo (presets 1 e 2 dão a este slot só row-span-5): aperta os
+   chips um fio para a linha de baixo não ficar raspando a borda. */
+@container credentials-card (max-height: 85px) {
+  .bento-credentials-title {
+    margin-bottom: 0.375rem;
+  }
+
+  .bento-credentials-chip {
+    padding-inline: 0.625rem;
+    padding-block: 0.25rem;
+    font-size: 0.625rem;
+  }
+}
+
+/* ═══ 15. CELULAR — ALTURAS DO GRID EM COLUNA ═════════════════════
+   Abaixo de 40rem o grid vira UMA coluna com `grid-auto-rows: auto`,
+   ou seja: quem define a altura de cada card passa a ser o conteúdo
+   dele. E aí aparece um problema que o desktop escondia — lá a altura
+   vinha do `row-span`, então nunca importou que o conteúdo não
+   empurrasse altura nenhuma.
+
+   Medido no celular ANTES desta seção: avatar com 2px, e-mail com 2px,
+   cards de ícone com 34px, Ferramentas com 50px (e os quadradinhos
+   vazando pra fora do card). Duas causas:
+
+     1. `<canvas>` 3D e ícones são posicionados de forma ABSOLUTA —
+        saem do fluxo e não contribuem altura nenhuma;
+     2. `container-type: size` aplica CONTENÇÃO DE TAMANHO: por
+        definição o conteúdo deixa de determinar as dimensões do
+        elemento. Ótimo pro @container do desktop, fatal numa linha
+        de altura automática.
+   ══════════════════════════════════════════════════════════════════ */
+
+@media (width < 40rem) {
+
+  /* Desliga a contenção: aqui embaixo o layout é uma coluna só, então
+     as consultas de container que ela habilita não são usadas — só o
+     efeito colateral de colapsar a altura sobrava. */
+  .bento-card--services,
+  .bento-card--tools,
+  .bento-credentials {
+    container-type: normal;
+    height: auto;
+  }
+
+  /* Estes três precisam do conteúdo em fluxo pra terem altura: no
+     desktop o rótulo e os chips ficam posicionados de forma absoluta
+     dentro da moldura do card. Ao voltarem pro fluxo eles viram filhos
+     do flex do card — que herda direção LINHA do cardMotion, e aí o
+     rótulo "Serviços" ficava LADO A LADO com os chips. Daí a coluna. */
+  .bento-card--services {
+    flex-direction: column;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+  }
+
+  .bento-services-label,
+  .bento-services-area {
+    position: static;
+    inset: auto;
+    width: 100%;
+  }
+
+  .bento-services-area {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+
+  /* Cards só de ícone: viravam uma tira da altura do próprio ícone. */
+  .bento-sites,
+  .bento-place,
+  .bento-mail,
+  .bento-phone,
+  .bento-work {
+    min-height: 6.5rem;
+  }
+
+  /* O personagem 3D media 2px — o canvas é absoluto e não empurra
+     nada. Sem altura aqui, não havia o que renderizar. */
+  .bento-card--avatar {
+    min-height: 15rem;
+  }
+
+  .bento-card--header {
+    min-height: 9rem;
+  }
+
+  /* O baralho arrastável fica posicionado por coordenada (left:77% no
+     DraggableTag.css), pensado para um card largo. Numa coluna estreita
+     ele saía pela borda; escondido, sobra o texto, e os projetos
+     continuam acessíveis pela gaveta (que no celular lista todos). */
+  .bento-card--projects {
+    min-height: 11rem;
+  }
+
+  .bento-card--projects .bento-deck {
+    display: none;
+  }
+
+  .bento-card--static {
+    padding: 1.5rem;
+  }
+}

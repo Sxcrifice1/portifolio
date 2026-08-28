@@ -1,0 +1,51 @@
+<!doctype html>
+<!-- lang="pt-BR": o conteúdo padrão do site é português. Estava "en",
+     o que faz leitor de tela ler com pronúncia inglesa e confunde o
+     Google sobre o idioma da página. -->
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Título: é o que aparece na aba do navegador, no resultado do
+         Google e nos favoritos. Era "portifolio" (minúsculo e escrito
+         errado). -->
+    <title>João Arthur — Desenvolvedor e Designer</title>
+    <meta
+      name="description"
+      content="Portfólio de João Arthur, desenvolvedor e designer em Curitiba. Sites completos, landing pages, identidade visual e produção audiovisual."
+    />
+    <meta name="author" content="João Arthur" />
+    <meta name="theme-color" content="#0a0a0a" />
+
+    <!-- Open Graph: sem isto, mandar o link no WhatsApp, LinkedIn ou
+         Discord mostra só a URL crua, sem título, descrição nem imagem.
+         AJUSTE `og:url` e `og:image` para o endereço real depois de
+         publicar — scrapers exigem URL absoluta na imagem. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="João Arthur" />
+    <meta property="og:title" content="João Arthur — Desenvolvedor e Designer" />
+    <meta
+      property="og:description"
+      content="Sites completos, landing pages, identidade visual e produção audiovisual. Veja meus projetos."
+    />
+    <meta property="og:url" content="https://SEU-DOMINIO-AQUI/" />
+    <meta property="og:image" content="https://SEU-DOMINIO-AQUI/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="João Arthur — Desenvolvedor e Designer" />
+    <meta
+      name="twitter:description"
+      content="Sites completos, landing pages, identidade visual e produção audiovisual. Veja meus projetos."
+    />
+    <meta name="twitter:image" content="https://SEU-DOMINIO-AQUI/og.jpg" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

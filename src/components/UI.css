@@ -1,0 +1,39 @@
+@reference "../index.css";
+
+/* ══════════════════════════════════════════════════════════════════
+   OVERLAY DA INTERFACE
+   ──────────────────────────────────────────────────────────────────
+   O grosso do posicionamento do UI.jsx está em `style` inline, porque
+   os valores são animados pelo Framer Motion (opacity/rotateX/scale
+   derivados de `introProgress`) e precisam ser MotionValues.
+   Só o que é estático mora aqui.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Botão de trocar idioma — canto superior direito (ver `style` inline
+   no UI.jsx pra posição/z-index; aqui só o visual estático, mesma
+   receita do .bento-chip do resto do site: pílula escura, borda sutil,
+   texto pequeno). */
+.language-toggle {
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-radius: 9999px;
+  background-color: rgba(0, 0, 0, .4);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-family: "Geist Variable", sans-serif;
+  font-size: .8125rem;
+  font-weight: 600;
+  letter-spacing: .025em;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1),
+    scale .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.language-toggle:hover {
+  background-color: rgba(255, 255, 255, .12);
+  scale: 1.05;
+}
+
+.language-toggle:active {
+  scale: 0.96;
+}

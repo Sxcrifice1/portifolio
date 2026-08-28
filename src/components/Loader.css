@@ -1,0 +1,28 @@
+@reference "../index.css";
+
+/* ══════════════════════════════════════════════════════════════════
+   LOADER
+   ──────────────────────────────────────────────────────────────────
+   A animação do aparelhinho em si está em Loader.scss (keyframes e
+   as peças .device__a até .device__g). Aqui fica só o enquadramento.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* O !important derruba o `display:flex` que o .loader-wrapper do
+   .scss já aplica com alinhamento diferente. */
+.loader {
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 2rem !important;
+  flex-direction: column !important;
+  display: flex !important;
+}
+
+.loader-label {
+  animation: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;
+  font-size: .875rem;
+  line-height: 1.4286;
+  font-weight: 500;
+  letter-spacing: .2em;
+  color: rgba(255, 255, 255, .6);
+  text-transform: uppercase;
+}

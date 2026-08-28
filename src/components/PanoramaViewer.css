@@ -1,0 +1,477 @@
+@reference "../index.css";
+
+/* ══════════════════════════════════════════════════════════════════
+   PANORAMA 360
+   ──────────────────────────────────────────────────────────────────
+   Três camadas empilhadas, de trás para frente:
+     1. o <Canvas> com a esfera texturizada (Panorama.png)
+     2. os HOTSPOTS — pontos clicáveis ancorados na parede da esfera
+     3. o MODAL de música, que cobre tudo quando um hotspot de música
+        é aberto
+   ══════════════════════════════════════════════════════════════════ */
+
+
+/* ═══ 1. MOLDURA E CANVAS ═════════════════════════════════════════ */
+
+.pano {
+  border-radius: 1.125rem;
+  background-color: #000;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.pano-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Desfoque só nas bordas, feito com máscara radial. O blur em si vem
+   do `style` inline no JSX (backdropFilter + maskImage), porque
+   máscara não tem utility no Tailwind. */
+.pano-vignette {
+  pointer-events: none;
+  z-index: 10;
+  position: absolute;
+  inset: 0;
+}
+
+/* "Arraste para girar" — aparece no hover da moldura. */
+.pano-tip {
+  border: 1px solid rgba(255, 255, 255, .1);
+  pointer-events: none;
+  bottom: 1.5rem;
+  z-index: 20;
+  translate: -50% 0;
+  border-radius: 9999px;
+  position: absolute;
+  left: 50%;
+  background-color: rgba(0, 0, 0, .6);
+  padding-inline: 1rem;
+  padding-block: 0.375rem;
+  font-size: .75rem;
+  line-height: 1.3333;
+  color: rgba(255, 255, 255, .7);
+  opacity: 0;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .25);
+  backdrop-filter: blur(12px);
+  transition: opacity .3s cubic-bezier(.4, 0, .2, 1);
+}
+
+.group:hover .pano-tip {
+  opacity: 1;
+}
+
+/* Estado de carregamento, enquanto a textura de 12 MB não chega. */
+.pano-loading {
+  align-items: center;
+  gap: 0.75rem;
+  flex-direction: column;
+  display: flex;
+}
+
+.pano-loading-ring {
+  height: 2rem;
+  width: 2rem;
+  animation: spin 1s linear infinite;
+  border-width: 4px;
+  border-color: rgba(255, 255, 255, .2);
+  border-radius: 9999px;
+  border-top-color: #fff;
+}
+
+.pano-loading-text {
+  font-size: .875rem;
+  line-height: 1.4286;
+  font-weight: 500;
+  letter-spacing: .025em;
+  white-space: nowrap;
+  color: #fff;
+}
+
+
+/* ═══ 2. HOTSPOTS ═════════════════════════════════════════════════ */
+
+.pano-spot {
+  cursor: pointer;
+  position: relative;
+}
+
+/* O botão redondo. Cor de fundo/texto vem do JSX, que alterna entre
+   ativo (branco) e inativo (translúcido). */
+.pano-spot-btn {
+  height: 2.5rem;
+  width: 2.5rem;
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .3s;
+  border-radius: 9999px;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+/* Anel pulsante, só enquanto o hotspot está fechado. */
+.pano-spot-pulse {
+  pointer-events: none;
+  animation: ping 1s cubic-bezier(0, 0, .2, 1) infinite;
+  background-color: #fff;
+  opacity: .2;
+  border-radius: 9999px;
+  position: absolute;
+  inset: 0;
+}
+
+/* Balão de texto que abre abaixo do ponto. */
+.pano-spot-card {
+  border: 1px solid rgba(255, 255, 255, .1);
+  top: 3rem;
+  width: 18rem;
+  transform-origin: top;
+  translate: -50% 0;
+  border-radius: 1.125rem;
+  position: absolute;
+  left: 50%;
+  background-color: rgba(0, 0, 0, .8);
+  padding: 1.75rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .25);
+  backdrop-filter: blur(24px);
+}
+
+.pano-spot-title {
+  margin-bottom: 0.5rem;
+  font-family: Outfit, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.5556;
+  font-weight: 700;
+  color: #fff;
+}
+
+.pano-spot-desc {
+  font-size: .875rem;
+  line-height: 1.625;
+  color: oklch(70.8% 0 0);
+}
+
+/* Botão do balão, só nos hotspots que têm `link` (hoje o do Discord). */
+.pano-spot-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 1rem;
+  padding-inline: 0.875rem;
+  padding-block: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, .08);
+  font-size: .8125rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1),
+    scale .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.pano-spot-link:hover {
+  background-color: rgba(255, 255, 255, .18);
+  scale: 1.04;
+}
+
+.pano-spot-link:active {
+  scale: 0.97;
+}
+
+/* Bico do balão: um quadradinho girado 45°, encostado no topo. */
+.pano-spot-arrow {
+  top: -0.5rem;
+  height: 1rem;
+  width: 1rem;
+  translate: -50% 0;
+  border-top-width: 1px;
+  border-color: rgba(255, 255, 255, .1);
+  border-left-width: 1px;
+  position: absolute;
+  left: 50%;
+  rotate: 45deg;
+  background-color: rgba(0, 0, 0, .8);
+  backdrop-filter: blur(24px);
+}
+
+
+/* ═══ 3. MODAL DE MÚSICA ══════════════════════════════════════════ */
+
+.pano-modal {
+  z-index: 999;
+  background-color: rgba(0, 0, 0, .6);
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  position: absolute;
+  inset: 0;
+  padding: 1.5rem;
+  backdrop-filter: blur(8px);
+}
+
+/* Setas de navegação entre slides. Mesma aparência, lados opostos. */
+.pano-modal-arrow {
+  border: 1px solid rgba(255, 255, 255, .2);
+  z-index: 40;
+  border-radius: 9999px;
+  position: absolute;
+  background-color: rgba(255, 255, 255, .1);
+  padding: 0.75rem;
+  color: #fff;
+  backdrop-filter: blur(12px);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .15s;
+}
+
+.pano-modal-arrow:hover {
+  background-color: rgba(255, 255, 255, .2);
+}
+
+.pano-modal-arrow--prev {
+  left: 1rem;
+}
+
+.pano-modal-arrow--next {
+  right: 1rem;
+}
+
+.pano-modal-card {
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 1.375rem;
+  flex-direction: column;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .25);
+  background-color: rgba(17, 17, 17, .9);
+}
+
+/* Coluna X-em-cima-do-card. O card tem `max-width` próprio; ela repete
+   o mesmo limite pra o X alinhar exatamente com a borda direita dele. */
+.pano-modal-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.625rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Fora do card agora (ver JSX): estático dentro da coluna acima, em vez
+   de absoluto no canto da área de mídia, onde brigava com o botão de
+   som. */
+.pano-modal-close {
+  z-index: 10;
+  background-color: rgba(0, 0, 0, .4);
+  border-radius: 9999px;
+  padding: 0.5rem;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .15);
+  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, .7);
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .15s;
+}
+
+.pano-modal-close:hover {
+  background-color: rgba(0, 0, 0, .6);
+  color: #fff;
+}
+
+/* Área de mídia do slide (capa + botão play). */
+.pano-modal-media {
+  height: 14rem;
+  background-color: oklch(20.5% 0 0);
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ÚNICA classe que continua com @apply, de propósito: as paradas de cor
+   vêm de `from-*`/`to-*` que o JSX injeta a partir de MUSIC_SLIDES, e isso
+   só funciona pelas variáveis de gradiente do Tailwind. Em CSS puro o
+   gradiente sairia vazio. */
+.pano-modal-gradient {
+  @apply absolute inset-0 bg-gradient-to-br;
+}
+
+/* O vídeo da música preenche a área de mídia. `contain` (não `cover`):
+   é a gravação de uma tela de DAW, onde o que importa é a informação
+   nas bordas do quadro — cortar as laterais pra preencher a caixa
+   comeria justo isso. A sobra fica no gradiente do slide, atrás. */
+.pano-modal-video {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.pano-modal-play {
+  border: 2px solid #fff;
+  z-index: 10;
+  height: 4rem;
+  width: 4rem;
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, .3);
+  border-radius: 9999px;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  color: #fff;
+  backdrop-filter: blur(12px);
+  transition: all .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.pano-modal-play:hover {
+  scale: 1.1;
+  background-color: rgba(255, 255, 255, .2);
+}
+
+/* Enquanto toca ele vira PAUSE e some POR COMPLETO (opacity 0, não
+   translúcido — a 25% ele ainda ficava aparecendo por cima do vídeo o
+   tempo todo). Só reaparece quando o mouse entra na área de mídia,
+   igual player de vídeo comum.
+
+   O que NÃO volta é o `pointer-events: none` que existia aqui antes:
+   era ele que impedia o clique de pausar. Invisível mas clicável, o
+   botão segue no centro da área — e como clicar nele faz a mesma coisa
+   que clicar no vídeo (alternar play/pause), ele interceptar o clique
+   central não muda nada pra quem usa. */
+.pano-modal-play.esta-tocando {
+  opacity: 0;
+}
+
+.pano-modal-media:hover .pano-modal-play.esta-tocando,
+.pano-modal-play.esta-tocando:focus-visible {
+  opacity: 1;
+}
+
+/* Tela de toque: revelar no `:hover` é uma regra que um dedo nunca
+   dispara — no celular o botão de pause ficava invisível E inalcançável
+   depois que a música começava. Aqui ele fica sempre visível, só
+   translúcido pra não tapar o vídeo. */
+@media (pointer: coarse), (width < 40rem) {
+  .pano-modal-play.esta-tocando {
+    opacity: .55;
+  }
+}
+
+/* Mudo/som no canto de CIMA: embaixo é onde o card tem o texto do
+   slide, e o controle ficaria competindo com ele. */
+/* Mudo e tela cheia lado a lado, no canto de cima. */
+.pano-modal-controles {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pano-modal-mute {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  width: 2rem;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-radius: 9999px;
+  background-color: rgba(0, 0, 0, .45);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1),
+    scale .15s cubic-bezier(.4, 0, .2, 1);
+}
+
+.pano-modal-mute:hover {
+  background-color: rgba(255, 255, 255, .2);
+  scale: 1.08;
+}
+
+@media (pointer: coarse), (width < 40rem) {
+  .pano-modal-mute {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* Textos do slide. */
+.pano-modal-body {
+  gap: 0.75rem;
+  padding-inline: 2rem;
+  padding-block: 1.75rem;
+  flex-direction: column;
+  display: flex;
+}
+
+.pano-modal-text {
+  gap: 0.75rem;
+  flex-direction: column;
+  display: flex;
+}
+
+.pano-modal-title {
+  font-family: Outfit, sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.3333;
+  font-weight: 700;
+  color: #fff;
+}
+
+.pano-modal-desc {
+  font-size: .875rem;
+  line-height: 1.625;
+  color: oklch(70.8% 0 0);
+}
+
+/* Rodapé: tag à esquerda, bolinhas de slide à direita. */
+.pano-modal-rule {
+  margin-top: 0.5rem;
+  background-color: rgba(255, 255, 255, .1);
+  width: 100%;
+  height: 1px;
+}
+
+.pano-modal-foot {
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+}
+
+.pano-modal-tag {
+  align-items: center;
+  gap: 0.5rem;
+  font-size: .75rem;
+  line-height: 1.3333;
+  color: oklch(55.6% 0 0);
+  display: flex;
+}
+
+.pano-modal-dots {
+  gap: 0.375rem;
+  display: flex;
+}
+
+.pano-modal-dot {
+  height: 0.375rem;
+  width: 0.375rem;
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  transition-duration: .3s;
+  border-radius: 9999px;
+}
