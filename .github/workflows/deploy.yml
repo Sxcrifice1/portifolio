@@ -1,0 +1,57 @@
+# Publica o site no GitHub Pages a cada push na main.
+#
+# Não é preciso commitar a pasta `dist`: o próprio GitHub roda o build e
+# publica o resultado. Por isso `dist` continua no .gitignore.
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Permite disparar manualmente pela aba Actions.
+  workflow_dispatch:
+
+# Permissões que a action de deploy exige.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Se você der dois pushes seguidos, o segundo espera o primeiro em vez de
+# os dois publicarem ao mesmo tempo e brigarem.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # `npm ci` (e não `install`): instala exatamente o que está no
+      # package-lock.json, então o build do GitHub usa as mesmas versões
+      # que a sua máquina.
+      - run: npm ci
+
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

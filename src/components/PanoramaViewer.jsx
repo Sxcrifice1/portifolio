@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { X, Info, Music, PlayCircle, Volume2, VolumeX, ArrowUpRight, Maximize } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './PanoramaViewer.css';
+import { arquivo } from '../arquivos'
 
 // Estrutura (posição na esfera 360, ícone, link) não muda com o idioma
 // — só título/descrição. Base + texto por idioma, junta os dois na hora
@@ -222,7 +223,7 @@ const TEXTO_PANO = {
 function PanoramaSphere({ activeHotspot, setActiveHotspot, idioma = "pt" }) {
   const HOTSPOTS = montarHotspots(idioma);
   const tp = TEXTO_PANO[idioma];
-  const texture = useTexture('/Panorama.webp');
+  const texture = useTexture(arquivo('/Panorama.webp'));
   texture.colorSpace = THREE.SRGBColorSpace; // Garantir cores corretas
 
   // Função para ajudar a mapear novos pontos

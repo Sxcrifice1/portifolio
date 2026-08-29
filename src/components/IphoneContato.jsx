@@ -3,8 +3,9 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { useGLTF, Environment, Html, Center, Bounds } from '@react-three/drei'
 import * as THREE from 'three'
 import './IphoneContato.css'
+import { arquivo } from '../arquivos'
 
-const MODELO = '/iphone_14_pro.glb'
+const MODELO = arquivo('/iphone_14_pro.glb')
 
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  PAINEL DA TELA — é aqui que você mexe para POSICIONAR           ║

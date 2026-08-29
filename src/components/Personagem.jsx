@@ -2,11 +2,12 @@ import { useRef, useEffect, useMemo } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF, Environment } from '@react-three/drei'
 import * as THREE from 'three'
+import { arquivo } from '../arquivos'
 
 const rad = (d) => (d * Math.PI) / 180
 
 function Modelo({
-  url = '/personagem.glb',
+  url = arquivo('/personagem.glb'),
   cabecaYaw = 18,
   cabecaPitch = 9,
   corpoYaw = 4,
@@ -176,4 +177,4 @@ export default function Personagem({ className = '', style }) {
   )
 }
 
-useGLTF.preload('/personagem.glb')
+useGLTF.preload(arquivo('/personagem.glb'))

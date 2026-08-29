@@ -7,6 +7,7 @@ import { DraggableCard } from './DraggableTag';
 import { PanoramaViewer } from './PanoramaViewer';
 import IphoneContato from './IphoneContato';
 import './BentoGrid.css';
+import { arquivo } from "../arquivos";
 
 // Manda o conteúdo pro <body>, fora da árvore do grid.
 //
@@ -351,13 +352,13 @@ function SiteCase({ site, variant = "classic", idioma = "pt" }) {
 // (atributo `download` do link) — sem isso o arquivo salvaria com o
 // nome interno, que não diz nada pra quem recebe.
 const CURRICULOS = {
-  pt: { arquivo: "/cv/curriculo-joao-arthur-pt.pdf", nomeArquivo: "Joao-Arthur-Curriculo.pdf" },
-  en: { arquivo: "/cv/curriculo-joao-arthur-en.pdf", nomeArquivo: "Joao-Arthur-Resume.pdf" },
+  pt: { arquivo: arquivo("/cv/curriculo-joao-arthur-pt.pdf"), nomeArquivo: "Joao-Arthur-Curriculo.pdf" },
+  en: { arquivo: arquivo("/cv/curriculo-joao-arthur-en.pdf"), nomeArquivo: "Joao-Arthur-Resume.pdf" },
 };
 
 const DADOS_FIXOS = {
   name: "João Arthur",
-  avatarUrl: "/avatar.webp",
+  avatarUrl: arquivo("/avatar.webp"),
   email: "joaoafg04@gmail.com",
   whatsapp: "+55 41 99575-4792",
   // Coordenadas de Curitiba. Os parâmetros `entry`/`g_ep` da URL copiada
@@ -378,10 +379,10 @@ const SITES_BASE = [
     // a tela de login. Mais de uma imagem aqui já ativa o carrossel de
     // fotos sozinho.
     imagens: [
-      "/projects/clydes-1-home.jpg",
-      "/projects/clydes-2-plugins.jpg",
-      "/projects/clydes-3-about.jpg",
-      "/projects/clydes-4-login.jpg",
+      arquivo("/projects/clydes-1-home.jpg"),
+      arquivo("/projects/clydes-2-plugins.jpg"),
+      arquivo("/projects/clydes-3-about.jpg"),
+      arquivo("/projects/clydes-4-login.jpg"),
     ],
     texto: {
       pt: {
