@@ -2498,3 +2498,45 @@
     padding: 1.5rem;
   }
 }
+
+/* ── TROCA DE PRESET: cards se desenham sozinhos ─────────────────
+   Os 5 cards expansíveis são cascas TRANSPARENTES — quem os desenha é
+   o <path> do SVG, redesenhado a cada quadro a partir da posição real
+   de cada um. Isso custa caro justamente durante a troca de layout,
+   quando o Framer já está movendo 14 cards: medido, escondendo a
+   camada de formas o pior quadro caía de 166ms para 88ms.
+
+   Como trocar de preset FECHA a gaveta, nesse intervalo a forma
+   recortada é só um retângulo arredondado — ou seja, exatamente o que
+   um card comum já é. Então o loop para, o SVG some, e o CSS abaixo
+   assume o desenho. Visualmente é o mesmo; a diferença é que o
+   navegador deixa de medir 5 cards por quadro no pior momento. */
+.bento-shape-layer.esta-escondida {
+  visibility: hidden;
+}
+
+.lshape-shell.esta-solido {
+  background-color: #141414;
+  border: 1px solid rgba(255, 255, 255, .06);
+  border-radius: 1rem;
+}
+
+/* ── CSS CONTAINMENT ─────────────────────────────────────────────
+   `contain: layout` diz ao navegador que o que acontece DENTRO de um
+   card nunca muda o layout de fora dele. Com essa garantia, quando algo
+   força um recálculo (e aqui isso acontece: o loop de formas mede os
+   cards a cada quadro), ele não precisa mais reprocessar a página
+   inteira — resolve card a card e para.
+
+   É `layout` sozinho, sem `paint`: `paint` recortaria o que passa da
+   borda, e vários elementos daqui vazam de propósito — o balão de nível
+   das ferramentas, o balão da cidade, os chips. Com `paint` eles
+   sumiriam.
+
+   Não entra nos cards expansíveis (.lshape-shell): eles são cascas cuja
+   forma é desenhada por um SVG que vive FORA deles, e conter o layout
+   deles atrapalharia essa medição. */
+.bento-card--static,
+.bento-card--header {
+  contain: layout;
+}

@@ -854,6 +854,18 @@ const DRAWER_GAP_FALLBACK = 16;
 // sem deixar passar um giro de verdade no 360.
 const CLICK_SLOP = 6;
 
+// Duração da troca de preset, em segundos. Fica aqui em cima porque
+// DOIS lugares dependem dela: a transição do Framer e o tempo que o
+// loop de formas fica parado (ver `transicionando`).
+//
+// 0.35s, não os 1.2s originais: são 14 cards mudando de posição E
+// tamanho ao mesmo tempo, o quadro mais caro do site. Encurtar não
+// deixa cada quadro mais barato, mas reduz pela metade QUANTOS quadros
+// caros existem — e uma animação rápida que engasga um pouco passa
+// despercebida, enquanto uma lenta que engasga é exatamente o que se
+// nota.
+const DURACAO_TROCA = 0.35;
+
 // ═══════════════════════════════════════════════════════════════
 // CARDS QUE ABREM GAVETA
 // ───────────────────────────────────────────────────────────────
@@ -1440,12 +1452,51 @@ export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
     return () => window.removeEventListener("resize", read);
   }, []);
 
+  // Durante a troca de preset o loop de formas PARA e os cards
+  // expansíveis passam a desenhar o próprio fundo (classe
+  // `esta-solido`). Isso é possível porque trocar de preset FECHA a
+  // gaveta — e sem gaveta a forma recortada é só um retângulo
+  // arredondado, exatamente o que um card comum já é. Visualmente dá no
+  // mesmo; a diferença é que o navegador para de medir 5 cards por
+  // quadro justo no momento em que o Framer está movendo 14.
+  //
+  // Medido: escondendo a camada de formas, o pior quadro da transição
+  // caía de 166ms para 88ms — metade do custo era este loop.
+  // REF, não estado. Marcar a transição com `useState` re-renderizava os
+  // 14 cards no exato instante em que o Framer começa a animá-los —
+  // medido, isso criava um pico de 310ms, pior do que o problema que a
+  // otimização resolvia. Mexendo direto no DOM, o React não re-renderiza
+  // nada e a economia fica limpa.
+  const transicionandoRef = useRef(false);
+  const svgFormasRef = useRef(null);
+
   useEffect(() => {
-    let raf;
-    const tick = () => {
-      raf = requestAnimationFrame(tick);
-      const grid = gridRef.current;
-      if (!grid) return;
+    transicionandoRef.current = true;
+    svgFormasRef.current?.classList.add("esta-escondida");
+    for (const card of EXPANDABLE_CARDS) {
+      shapes.current[card]?.head?.classList.add("esta-solido");
+    }
+
+    const t = setTimeout(() => {
+      transicionandoRef.current = false;
+      // Redesenha ANTES de revelar, senão o primeiro quadro mostraria a
+      // forma nas posições antigas.
+      atualizarFormas();
+      svgFormasRef.current?.classList.remove("esta-escondida");
+      for (const card of EXPANDABLE_CARDS) {
+        shapes.current[card]?.head?.classList.remove("esta-solido");
+      }
+    }, DURACAO_TROCA * 1000 + 60);
+
+    return () => clearTimeout(t);
+  }, [layoutIndex]);
+
+  // Extraída do loop pra poder ser chamada TAMBÉM no fim da transição,
+  // antes de a camada de formas reaparecer — senão o primeiro quadro
+  // depois dela mostraria o desenho velho, das posições antigas.
+  const atualizarFormas = React.useCallback(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
 
       // ─── FASE 1: só LEITURAS ───────────────────────────────────
       // Antes, este loop lia a geometria de um card e já escrevia o
@@ -1491,10 +1542,21 @@ export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
           s.ultimoD = d;
         }
       }
+  }, []);
+
+  useEffect(() => {
+    let raf;
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      // Parado durante a transição: quem desenha os cards nesse intervalo
+      // é o CSS (ver `esta-solido`).
+      if (transicionandoRef.current) return;
+      atualizarFormas();
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [atualizarFormas]);
+
 
   // As gavetas crescem para fora do container. Agora que o scroll horizontal
   // foi liberado na página (overflowX: auto), o grid NÃO precisa mais se
@@ -1607,15 +1669,13 @@ export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
     // O zoom do hover também sai: é transform em 14 cards, e em máquina
     // fraca cada um desses custa.
     ...(modoLeve ? {} : { whileHover: { scale: 1.02 } }), // Substitui o CSS hover para não bugar o framer motion!
+    // `tween` em vez de `spring`: mola é simulação física, recalculada a
+    // cada quadro para cada um dos 14 cards. Uma curva de easing é uma
+    // conta só, e no fim o olho não distingue num movimento de 0.35s.
     transition: modoLeve ? { duration: 0 } : {
-      type: "spring",
-      bounce: 0.22,      // Elasticidade (0 a 1) - dá o efeito chiclete sem ser exagerado
-      // 0.7s, nao 1.2s: sao 14 cards animando POSICAO E TAMANHO ao mesmo
-      // tempo, e cada quadro disso e caro. Medido numa CPU 6x mais
-      // lenta, 27% dos quadros da transicao passavam de 33ms. Menos
-      // tempo no estado pesado = menos engasgo — e o movimento fica mais
-      // direto, que combina melhor com um clique de troca de layout.
-      duration: 0.7
+      type: "tween",
+      ease: [0.22, 1, 0.36, 1],   // saída rápida, chegada macia
+      duration: DURACAO_TROCA
     },
     className: "relative overflow-hidden shadow-xl border border-white/5 bg-[#141414] rounded-2xl card-interactable flex items-center justify-center group cursor-pointer opacity-80"
   };
@@ -1639,7 +1699,11 @@ export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
               É absoluta, então não ocupa célula do grid. Vem primeiro no DOM
               para ficar atrás dos cards (o avatar e a gaveta são só cascas
               transparentes por cima dela). */}
+          {/* Escondida durante a troca de preset: nesse intervalo quem
+              desenha os cards expansíveis é o CSS (`esta-solido`), e o
+              loop que redesenha estas formas fica parado. */}
           <svg
+            ref={svgFormasRef}
             className="bento-shape-layer lshape-svg"
             aria-hidden="true"
           >

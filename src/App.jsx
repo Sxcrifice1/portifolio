@@ -1,31 +1,24 @@
 import React from 'react';
 import UI from './components/UI';
-import { arquivo } from './arquivos';
 import './index.css';
 
 function App() {
   return (
     <>
-      {/* Fundo: uma imagem de mata fechada, desfocada.
-          Era um shader WebGL (o Silk) rodando 60 vezes por segundo, pra
-          sempre. Aqui o navegador desenha uma vez e esquece — some um
-          contexto WebGL inteiro (o site tinha dois) e o trabalho
-          continuo de GPU, o que em notebook significa menos calor e
-          mais bateria. A imagem tem 44 KB.
+      {/* Fundo: cinza sólido, um tom acima do #141414 dos cards — eles
+          ficam levemente afundados, o que ajuda a separá-los do fundo
+          sem precisar de sombra forte.
 
-          `backgroundColor` embaixo cobre o instante antes da imagem
-          carregar, pra não piscar branco. */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0, left: 0, width: '100%', height: '100%',
-          zIndex: 0,
-          backgroundColor: '#060d08',
-          backgroundImage: `url(${arquivo('/floresta.webp')})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
+          Era um shader WebGL cobrindo a tela e rodando 60 vezes por
+          segundo. Cor sólida é o extremo oposto: o navegador pinta uma
+          vez, não guarda framebuffer nenhum e não usa GPU. Também sai
+          um contexto WebGL inteiro (o site tinha dois). */}
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, width: '100%', height: '100%',
+        zIndex: 0,
+        backgroundColor: '#202020',
+      }} />
       
       {/* UI Overlay */}
       <UI />
