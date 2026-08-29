@@ -37,3 +37,22 @@
 .language-toggle:active {
   scale: 0.96;
 }
+
+/* Alinhamento vertical do grid dentro do container que rola.
+   ──────────────────────────────────────────────────────────────────
+   As DUAS declarações são de propósito, e a ordem importa.
+
+   `center` sozinho tem um defeito clássico: quando o conteúdo é mais
+   alto que o container, ele sobra para os DOIS lados — e o que sobra
+   para cima fica inalcançável, porque não existe scroll negativo.
+   Foi o que cortou o rodapé numa tela de 1360x768.
+
+   `safe center` centraliza enquanto cabe e passa a alinhar pelo início
+   quando não cabe, deixando tudo alcançável pela rolagem. Navegador
+   que não conheça esse valor descarta a segunda linha e fica com a
+   primeira — ou seja, cai no comportamento antigo em vez de perder o
+   alinhamento por completo. */
+.ui-scroll {
+  align-items: center;
+  align-items: safe center;
+}

@@ -116,7 +116,18 @@ const Silk = ({ speed = 5, scale = 1, color = '#7B7481', noiseIntensity = 1.5, r
   }, [speed, scale, noiseIntensity, color, rotation, uniforms]);
 
   return (
-    <Canvas dpr={[1, 2]} frameloop="always">
+    // dpr 0.6 (era [1, 2]): este canvas cobre a TELA INTEIRA e roda um
+    // shader de ruido em CADA pixel, a cada quadro — e o custo cresce
+    // com o quadrado do fator. Em [1,2] numa tela retina eram ~6,8
+    // milhoes de pixels por quadro num 1920x889.
+    //
+    // 0.6 renderiza em pouco mais de um terco da resolucao e deixa o
+    // navegador esticar a imagem. Funciona aqui porque o desenho e uma
+    // seda DESFOCADA, sem borda nem detalhe fino pra perder — o
+    // esticamento so soma mais suavidade a uma imagem que ja e suave.
+    // Isso corta o custo pra ~36% em QUALQUER maquina, nao so nas
+    // retina, e e o item que mais pesa num notebook com video integrado.
+    <Canvas dpr={0.6} frameloop="always">
       <SilkPlane ref={meshRef} uniforms={uniforms} />
     </Canvas>
   );

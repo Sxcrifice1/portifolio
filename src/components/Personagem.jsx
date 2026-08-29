@@ -166,7 +166,10 @@ export default function Personagem({ className = '', style }) {
         camera={{ position: [0, 0, 3.0], fov: 32 }}
         gl={{ alpha: true, antialias: true }}
         style={{ background: 'transparent' }}
-        dpr={[1, 2]}
+        // Teto 1.5 em vez de 2: o personagem aparece num card de ~350px,
+        // onde a diferenca entre 1.5x e 2x nao e percebida, mas o custo
+        // de render cresce com o QUADRADO do fator.
+        dpr={[1, 1.5]}
       >
         <Environment preset="city" />
         <directionalLight position={[-1.4, 1.6, 2]} intensity={2.2} />

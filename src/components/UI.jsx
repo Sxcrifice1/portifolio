@@ -31,6 +31,20 @@ export default function UI() {
   // Em vez de ler o scroll físico, criamos um progresso virtual de 0 a 1
   const introProgress = useMotionValue(0);
 
+  // O borrão da abertura é feito de 8 camadas com `backdrop-filter`, que
+  // obriga o navegador a capturar e desfocar o fundo a cada composição —
+  // caro. Ele some por opacidade quando a intro acaba, mas continuava
+  // MONTADO: medido, 24 elementos com backdrop-filter invisíveis, 5
+  // deles cobrindo 1920x192 cada. Aqui a gente desmonta de vez assim que
+  // a animação termina, em vez de só deixar transparente.
+  const [introTerminou, setIntroTerminou] = useState(false);
+  useEffect(() => {
+    const parar = introProgress.on('change', (v) => {
+      if (v >= 0.995) setIntroTerminou(true);
+    });
+    return parar;
+  }, [introProgress]);
+
   // Efeito para disparar a transição após "carregar"
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -70,25 +84,26 @@ export default function UI() {
 
       <div
         ref={scrollContainer}
+        className="ui-scroll"
         style={{
           height: '100%',
-          // No CELULAR o grid vira uma coluna e fica bem mais alto que a
-          // tela (medido: 1837px dentro de 840px). Com `overflowY:
-          // hidden` não havia como rolar e o conteúdo de baixo era
-          // simplesmente inalcançável. O eixo X é o inverso: a rolagem
-          // horizontal existe só para as gavetas do desktop, que nascem
-          // fora do grid — no celular elas viram painel sobre a tela, e
-          // deixar o X solto só criaria um arrasto lateral à toa.
-          overflowY: ehMobile ? 'auto' : 'hidden',
+          // `auto` SEMPRE, não só no celular. O grid tem altura fixa
+          // (~768px) e numa tela de 768 de altura ele não cabe: medido
+          // num 1360x768, o grid ia até y=785 e os últimos 21px ficavam
+          // cortados, sem rolagem pra alcançar. `auto` não mostra barra
+          // quando cabe, então telas grandes não mudam em nada.
+          overflowY: 'auto',
+          // O eixo X é outra história: a rolagem horizontal existe só
+          // para as gavetas do desktop, que nascem FORA do grid. No
+          // celular elas viram painel sobre a tela, e deixar o X solto
+          // criaria um arrasto lateral à toa.
           overflowX: ehMobile ? 'hidden' : 'scroll', // 'scroll' em vez de 'auto' força a barra a existir sempre, evitando pulo de layout
           pointerEvents: 'auto',
           position: 'relative',
           display: 'flex',
-          // `center` com conteúdo mais alto que o container corta os dois
-          // extremos e nem a rolagem alcança o de cima — daí `flex-start`
-          // quando a coluna do celular estoura a altura.
-          alignItems: ehMobile ? 'flex-start' : 'center',
-          // margin: '0 auto' no filho cuidará do centro horizontal sem cortar as bordas
+          // O alinhamento vertical vive no CSS (.ui-scroll), não aqui:
+          // ele precisa de DUAS declarações em cascata, coisa que um
+          // objeto de style inline não consegue expressar.
           zIndex: 1
         }}
       >
@@ -149,7 +164,11 @@ export default function UI() {
 
       </div>
 
-      {/* Gradual Blur no final da tela sendo esmaecido suavemente */}
+      {/* Gradual Blur no final da tela sendo esmaecido suavemente.
+          Desmontado ao fim da intro (ver `introTerminou` lá em cima):
+          invisível ele já estava, mas as camadas de backdrop-filter
+          continuavam custando composição a cada quadro. */}
+      {!introTerminou && (
       <motion.div style={{ opacity: blurOpacity, position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10 }}>
         <GradualBlur
           target="parent"
@@ -162,6 +181,7 @@ export default function UI() {
           opacity={1}
         />
       </motion.div>
+      )}
     </section>
   );
 }

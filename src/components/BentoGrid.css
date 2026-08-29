@@ -515,11 +515,19 @@
   overflow: hidden;
 }
 
-/* O modelo é maior que o card de propósito e sobe 55% para enquadrar
-   o rosto. Mexa aqui se o personagem ficar descentralizado. */
+/* O modelo é maior que o card de propósito e sobe para enquadrar o
+   rosto — o card mostra só uma janela desse palco, recortada pelo
+   overflow do .bento-avatar-clip.
+
+   As medidas são em PORCENTAGEM do card, não em pixels. Com os 400px
+   fixos que havia aqui, a fração visível mudava conforme o preset: num
+   card de 183px de altura apareciam 183 dos 400px do palco; num de
+   144px, só 144 — pedaços diferentes do mesmo desenho, e o personagem
+   parecia centralizado num layout e torto no outro. Em porcentagem o
+   palco encolhe junto com o card e o enquadramento fica igual em todos. */
 .bento-avatar-stage {
-  width: 400px;
-  height: 400px;
+  width: 215%;
+  height: 215%;
   translate: -50% -55%;
   justify-content: center;
   align-items: center;
