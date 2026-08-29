@@ -1433,7 +1433,19 @@ export default function BentoGrid({ idioma = "pt" }) {
       raf = requestAnimationFrame(tick);
       const grid = gridRef.current;
       if (!grid) return;
+
+      // ─── FASE 1: só LEITURAS ───────────────────────────────────
+      // Antes, este loop lia a geometria de um card e já escrevia o
+      // `d` do path dele, depois passava pro próximo. Cada escrita
+      // invalida o layout, então CADA leitura seguinte obrigava o
+      // navegador a recalcular tudo na hora — 5 recálculos forçados
+      // por quadro. O trace do DevTools apontava "ForcedReflow" como o
+      // único problema da página, cobrindo o tempo todo.
+      //
+      // Lendo tudo primeiro e escrevendo tudo depois, o layout é
+      // calculado UMA vez por quadro.
       const g = grid.getBoundingClientRect();
+      const pendentes = [];
 
       for (const card of EXPANDABLE_CARDS) {
         const s = shapes.current[card];
@@ -1451,7 +1463,20 @@ export default function BentoGrid({ idioma = "pt" }) {
           box[side] = s[key].w >= 2 ? s[key] : null;          // fina demais: nem conta
         }
 
-        s.path.setAttribute("d", roundedPolygon(shapeOutline(h, box.left, box.right), 16, 32));
+        pendentes.push([s, roundedPolygon(shapeOutline(h, box.left, box.right), 16, 32)]);
+      }
+
+      // ─── FASE 2: só ESCRITAS ───────────────────────────────────
+      for (const [s, d] of pendentes) {
+        // Só escreve se o desenho MUDOU. Parado (sem gaveta abrindo,
+        // sem troca de preset, sem hover), a forma é a mesma quadro a
+        // quadro — e uma escrita idêntica ainda assim invalidaria o
+        // layout de graça. Com isso, a página em repouso não suja
+        // nada e o loop vira só leitura.
+        if (s.ultimoD !== d) {
+          s.path.setAttribute("d", d);
+          s.ultimoD = d;
+        }
       }
     };
     raf = requestAnimationFrame(tick);
