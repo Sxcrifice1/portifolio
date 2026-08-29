@@ -267,7 +267,10 @@ export default function IphoneContato({
 
   return (
     <div className="iphone-palco">
-      <Canvas camera={{ position: [0, 0, 0.42], fov: 35 }} dpr={[1, 1.5]} gl={{ alpha: true }}>
+      <Canvas camera={{ position: [0, 0, 0.42], fov: 35 }} // Teto de 2 (nao 1.5): o aparelho tem reflexos e bordas metalicas
+      // finas, e a diferenca de nitidez aqui e visivel. Este canvas so
+      // existe enquanto a gaveta esta aberta, entao o custo e pontual.
+      dpr={[1, 2]} gl={{ alpha: true }}>
         <ambientLight intensity={0.6} />
         <directionalLight position={[2, 3, 4]} intensity={1.4} />
         <directionalLight position={[-3, -1, -2]} intensity={0.5} color="#6ea8ff" />
