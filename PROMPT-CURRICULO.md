@@ -16,7 +16,7 @@ para clientes de freelance.
 - Cidade: Curitiba, Paraná, Brasil
 - E-mail: joaoafg04@gmail.com
 - WhatsApp: +55 41 99575-4792
-- Portfólio: (cole aqui o link do seu site quando publicar)
+- Portfólio: https://sxcrifice1.github.io/portifolio/
 
 ## O que eu faço
 
