@@ -1074,7 +1074,7 @@ const lerpBox = (a, b, k) => ({
   h: a.h + (b.h - a.h) * k
 });
 
-export default function BentoGrid({ idioma = "pt" }) {
+export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
   // Reconstrói o objeto de conteúdo sempre que o idioma muda — é
   // barato (só junta objetos já prontos, não busca nada) e mantém
   // TODO o resto do arquivo (`profileData.x`, em centenas de lugares)
@@ -1396,7 +1396,9 @@ export default function BentoGrid({ idioma = "pt" }) {
   // esticar e perder a proporção durante o voo entre presets. O hover só é
   // travado com a gaveta aberta, porque escalar só a cabeça deformaria a forma.
   const headMotion = (card) => ({
-    layout: "position",
+    // Sem animação de layout no modo leve: o card vai direto pro lugar
+    // novo. Ver o comentário do cardMotion logo abaixo.
+    layout: modoLeve ? false : "position",
     ...(openCard === card ? { whileHover: { scale: 1 } } : {})
   });
 
@@ -1592,10 +1594,20 @@ export default function BentoGrid({ idioma = "pt" }) {
     );
   };
 
+  // `layout: false` no modo leve — a troca de preset vira instantânea.
+  //
+  // Esta é a animação mais cara do site: 14 cards mudando de POSIÇÃO E
+  // TAMANHO ao mesmo tempo, cada quadro exigindo que o navegador meça e
+  // reposicione tudo. Medido numa CPU 6x mais lenta, 23% dos quadros da
+  // transição passavam de 33ms. Num PC que aguenta, ela continua igual;
+  // no que não aguenta, o layout troca na hora — sem graça, mas sem
+  // engasgo, que é o que importa quando a alternativa é travar.
   const cardMotion = {
-    layout: true,
-    whileHover: { scale: 1.02 }, // Substitui o CSS hover para não bugar o framer motion!
-    transition: {
+    layout: modoLeve ? false : true,
+    // O zoom do hover também sai: é transform em 14 cards, e em máquina
+    // fraca cada um desses custa.
+    ...(modoLeve ? {} : { whileHover: { scale: 1.02 } }), // Substitui o CSS hover para não bugar o framer motion!
+    transition: modoLeve ? { duration: 0 } : {
       type: "spring",
       bounce: 0.22,      // Elasticidade (0 a 1) - dá o efeito chiclete sem ser exagerado
       // 0.7s, nao 1.2s: sao 14 cards animando POSICAO E TAMANHO ao mesmo

@@ -4,6 +4,7 @@ import GradualBlur from './GradualBlur';
 import TargetCursor from './TargetCursor';
 import BentoGrid from './BentoGrid';
 import Loader from './Loader';
+import { useModoLeve } from '../desempenho';
 import './UI.css';
 
 export default function UI() {
@@ -27,6 +28,10 @@ export default function UI() {
     mq.addEventListener('change', ler);
     return () => mq.removeEventListener('change', ler);
   }, []);
+
+  // Máquina fraca? Ver src/desempenho.js. Repassado ao BentoGrid, que
+  // desliga a animação cara de troca de layout quando estiver ligado.
+  const modoLeve = useModoLeve();
 
   // Em vez de ler o scroll físico, criamos um progresso virtual de 0 a 1
   const introProgress = useMotionValue(0);
@@ -137,7 +142,7 @@ export default function UI() {
             }}
           >
             {/* Novo Bento Grid Dinâmico importado do projeto JOB */}
-            <BentoGrid idioma={idioma} />
+            <BentoGrid idioma={idioma} modoLeve={modoLeve} />
           </motion.div>
         </motion.div>
 
