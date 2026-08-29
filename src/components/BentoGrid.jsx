@@ -858,22 +858,20 @@ const CLICK_SLOP = 6;
 // DOIS lugares dependem dela: a transição do Framer e o tempo que o
 // loop de formas fica parado (ver `transicionando`).
 //
-// 0.15s, contra os 1.2s originais. São 14 cards mudando de posição E
-// tamanho ao mesmo tempo — o quadro mais caro do site, e não existe
-// como deixá-lo barato: é o navegador remedindo tudo.
+// Duração da troca de preset, em segundos. Usada em DOIS lugares: a
+// transição do Framer e o tempo que o loop de formas fica parado (ver
+// `transicionandoRef`), então precisa ser um valor só.
 //
-// O que dá pra controlar é QUANTOS desses quadros existem. A 1.2s eram
-// uns 70; a 0.15s são menos de 10. Um engasgo de 150ms no meio de uma
-// animação de 1.2s salta aos olhos; o mesmo engasgo numa de 0.15s
-// vira só um piscar, porque não sobra tempo para o olho acompanhar o
-// movimento e notar a falha nele.
+// 1.2s é o valor original, escolhido pelo dono do site. Já foi
+// encurtado para 0.7s e 0.15s tentando ganhar desempenho, e devolvido:
+// a animação é a assinatura do site e vale o custo. As otimizações que
+// sobraram são todas invisíveis (leituras em lote, loop parado durante
+// a transição, containment, modo leve em máquina fraca) e essas ficam.
 //
-// Testado e descartado no caminho: atrasar a troca em 1s depois do
-// clique não muda nada — o pior quadro ficou em 159ms contra 153ms sem
-// atraso. A travada acontece DURANTE a animação, não antes; adiar só
-// empurra o mesmo trabalho para depois, e ainda faz o clique parecer
-// que não funcionou.
-const DURACAO_TROCA = 0.15;
+// Testado e descartado: atrasar a troca em 1s depois do clique. Não
+// muda nada — pior quadro de 159ms com atraso contra 153ms sem. A
+// travada acontece DURANTE a animação, não antes.
+const DURACAO_TROCA = 1.2;
 
 // ═══════════════════════════════════════════════════════════════
 // CARDS QUE ABREM GAVETA
@@ -1479,26 +1477,7 @@ export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
   const transicionandoRef = useRef(false);
   const svgFormasRef = useRef(null);
 
-  useEffect(() => {
-    transicionandoRef.current = true;
-    svgFormasRef.current?.classList.add("esta-escondida");
-    for (const card of EXPANDABLE_CARDS) {
-      shapes.current[card]?.head?.classList.add("esta-solido");
-    }
 
-    const t = setTimeout(() => {
-      transicionandoRef.current = false;
-      // Redesenha ANTES de revelar, senão o primeiro quadro mostraria a
-      // forma nas posições antigas.
-      atualizarFormas();
-      svgFormasRef.current?.classList.remove("esta-escondida");
-      for (const card of EXPANDABLE_CARDS) {
-        shapes.current[card]?.head?.classList.remove("esta-solido");
-      }
-    }, DURACAO_TROCA * 1000 + 60);
-
-    return () => clearTimeout(t);
-  }, [layoutIndex]);
 
   // Extraída do loop pra poder ser chamada TAMBÉM no fim da transição,
   // antes de a camada de formas reaparecer — senão o primeiro quadro
@@ -1552,6 +1531,46 @@ export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
         }
       }
   }, []);
+
+  // DEPOIS de `atualizarFormas` de propósito: este efeito a lista nas
+  // dependências, e a lista é avaliada durante o render — se viesse
+  // antes, o React tentaria ler uma `const` ainda não inicializada e a
+  // página inteira quebrava ("Cannot access before initialization").
+  //
+  useEffect(() => {
+    transicionandoRef.current = true;
+    svgFormasRef.current?.classList.add("esta-escondida");
+    for (const card of EXPANDABLE_CARDS) {
+      shapes.current[card]?.head?.classList.add("esta-solido");
+    }
+
+    // NÃO medimos mais a transição pra ligar o modo leve automaticamente.
+    // Foi tentado e removido: medido numa máquina rápida, SEM throttling,
+    // a primeira troca rendeu 23 quadros em 1 segundo (~43ms cada). Ou
+    // seja, o critério disparava em qualquer computador, e o resultado
+    // era o pior dos mundos — o site animava a primeira troca e todas as
+    // seguintes ficavam instantâneas, um comportamento inconsistente que
+    // parece defeito.
+    //
+    // O modo leve continua existindo, decidido pelos sinais estáticos
+    // (preferência do sistema, núcleos, memória e uma medição do site em
+    // repouso). Esses são estáveis: ou a máquina é fraca desde o início,
+    // ou não é.
+
+    const t = setTimeout(() => {
+      transicionandoRef.current = false;
+      // Redesenha ANTES de revelar, senão o primeiro quadro mostraria a
+      // forma nas posições antigas.
+      atualizarFormas();
+      svgFormasRef.current?.classList.remove("esta-escondida");
+      for (const card of EXPANDABLE_CARDS) {
+        shapes.current[card]?.head?.classList.remove("esta-solido");
+      }
+
+    }, DURACAO_TROCA * 1000 + 60);
+
+    return () => clearTimeout(t);
+  }, [layoutIndex, atualizarFormas]);
 
   useEffect(() => {
     let raf;
@@ -1678,13 +1697,10 @@ export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
     // O zoom do hover também sai: é transform em 14 cards, e em máquina
     // fraca cada um desses custa.
     ...(modoLeve ? {} : { whileHover: { scale: 1.02 } }), // Substitui o CSS hover para não bugar o framer motion!
-    // `tween` em vez de `spring`: mola é simulação física, recalculada a
-    // cada quadro para cada um dos 14 cards. Uma curva de easing é uma
-    // conta só, e no fim o olho não distingue num movimento de 0.35s.
     transition: modoLeve ? { duration: 0 } : {
-      type: "tween",
-      ease: [0.22, 1, 0.36, 1],   // saída rápida, chegada macia
-      duration: DURACAO_TROCA
+      type: "spring",
+      bounce: 0.35,      // Elasticidade (0 a 1) - dá o efeito chiclete sem ser exagerado
+      duration: DURACAO_TROCA   // Força a ser muito mais lento e majestoso
     },
     className: "relative overflow-hidden shadow-xl border border-white/5 bg-[#141414] rounded-2xl card-interactable flex items-center justify-center group cursor-pointer opacity-80"
   };

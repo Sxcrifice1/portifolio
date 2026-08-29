@@ -23,6 +23,13 @@ import { useEffect, useState } from "react";
 //      DURANTE ela acusaria qualquer máquina, já que ela é pesada de
 //      propósito).
 //
+// Tentado e removido: medir a PRÓPRIA transição e ligar o modo leve se
+// ela engasgasse. O critério disparava em qualquer computador (medido
+// numa máquina rápida, sem throttling: 23 quadros em 1 segundo na
+// primeira troca), e o resultado era inconsistente — animava uma vez e
+// nunca mais. Os sinais acima são estáveis: ou a máquina é fraca desde
+// o começo, ou não é.
+//
 // Só liga, nunca desliga: se a máquina se mostrou fraca uma vez, não
 // faz sentido devolver a animação e arriscar engasgar de novo.
 
