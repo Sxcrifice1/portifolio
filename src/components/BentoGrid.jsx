@@ -858,13 +858,22 @@ const CLICK_SLOP = 6;
 // DOIS lugares dependem dela: a transição do Framer e o tempo que o
 // loop de formas fica parado (ver `transicionando`).
 //
-// 0.35s, não os 1.2s originais: são 14 cards mudando de posição E
-// tamanho ao mesmo tempo, o quadro mais caro do site. Encurtar não
-// deixa cada quadro mais barato, mas reduz pela metade QUANTOS quadros
-// caros existem — e uma animação rápida que engasga um pouco passa
-// despercebida, enquanto uma lenta que engasga é exatamente o que se
-// nota.
-const DURACAO_TROCA = 0.35;
+// 0.15s, contra os 1.2s originais. São 14 cards mudando de posição E
+// tamanho ao mesmo tempo — o quadro mais caro do site, e não existe
+// como deixá-lo barato: é o navegador remedindo tudo.
+//
+// O que dá pra controlar é QUANTOS desses quadros existem. A 1.2s eram
+// uns 70; a 0.15s são menos de 10. Um engasgo de 150ms no meio de uma
+// animação de 1.2s salta aos olhos; o mesmo engasgo numa de 0.15s
+// vira só um piscar, porque não sobra tempo para o olho acompanhar o
+// movimento e notar a falha nele.
+//
+// Testado e descartado no caminho: atrasar a troca em 1s depois do
+// clique não muda nada — o pior quadro ficou em 159ms contra 153ms sem
+// atraso. A travada acontece DURANTE a animação, não antes; adiar só
+// empurra o mesmo trabalho para depois, e ainda faz o clique parecer
+// que não funcionou.
+const DURACAO_TROCA = 0.15;
 
 // ═══════════════════════════════════════════════════════════════
 // CARDS QUE ABREM GAVETA
