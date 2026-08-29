@@ -511,3 +511,10 @@ export function PanoramaViewer({ idioma = "pt" }) {
     </div>
   );
 }
+
+// Baixa a textura do 360 JUNTO com o resto, enquanto a tela de
+// carregamento ainda está na frente — e não só quando a gaveta abre.
+// Os dois modelos .glb ja faziam isso (useGLTF.preload nos seus
+// arquivos); esta era a unica midia pesada que ficava pra depois, e por
+// isso a primeira abertura do 360 engasgava.
+useTexture.preload(arquivo('/Panorama.webp'));

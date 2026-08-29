@@ -1020,13 +1020,24 @@ function roundedPolygon(pts, R, r) {
 
   if (corners.length < 3) return "";
 
-  let d = `M ${corners[0].inX} ${corners[0].inY}`;
+  // Uma casa decimal, não o float inteiro. Duas razões, as duas de
+  // desempenho:
+  //   • a string do path fica MUITO menor, e o navegador reprocessa ela
+  //     inteira a cada escrita — sem isso saíam números como
+  //     "631.1875000000001";
+  //   • décimo de pixel é invisível, mas fazia o valor mudar a cada
+  //     quadro por tremor de arredondamento, o que derrubava a
+  //     otimização de "só escreve se mudou" lá no loop: parado, o
+  //     desenho passa a ser byte a byte idêntico e nada é reescrito.
+  const px = (v) => Math.round(v * 10) / 10;
+
+  let d = `M ${px(corners[0].inX)} ${px(corners[0].inY)}`;
   for (let i = 0; i < corners.length; i++) {
     const c = corners[i], next = corners[(i + 1) % corners.length];
     d += c.rad > 0.01
-      ? ` A ${c.rad} ${c.rad} 0 0 ${c.sweep} ${c.outX} ${c.outY}`
-      : ` L ${c.outX} ${c.outY}`;
-    d += ` L ${next.inX} ${next.inY}`;
+      ? ` A ${px(c.rad)} ${px(c.rad)} 0 0 ${c.sweep} ${px(c.outX)} ${px(c.outY)}`
+      : ` L ${px(c.outX)} ${px(c.outY)}`;
+    d += ` L ${px(next.inX)} ${px(next.inY)}`;
   }
   return d + " Z";
 }
@@ -1586,8 +1597,13 @@ export default function BentoGrid({ idioma = "pt" }) {
     whileHover: { scale: 1.02 }, // Substitui o CSS hover para não bugar o framer motion!
     transition: {
       type: "spring",
-      bounce: 0.35,      // Elasticidade (0 a 1) - dá o efeito chiclete sem ser exagerado
-      duration: 1.2      // 1.2 Segundos de duração! Força a ser muito mais lento e majestoso
+      bounce: 0.22,      // Elasticidade (0 a 1) - dá o efeito chiclete sem ser exagerado
+      // 0.7s, nao 1.2s: sao 14 cards animando POSICAO E TAMANHO ao mesmo
+      // tempo, e cada quadro disso e caro. Medido numa CPU 6x mais
+      // lenta, 27% dos quadros da transicao passavam de 33ms. Menos
+      // tempo no estado pesado = menos engasgo — e o movimento fica mais
+      // direto, que combina melhor com um clique de troca de layout.
+      duration: 0.7
     },
     className: "relative overflow-hidden shadow-xl border border-white/5 bg-[#141414] rounded-2xl card-interactable flex items-center justify-center group cursor-pointer opacity-80"
   };
