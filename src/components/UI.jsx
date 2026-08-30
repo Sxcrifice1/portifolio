@@ -4,7 +4,7 @@ import GradualBlur from './GradualBlur';
 import TargetCursor from './TargetCursor';
 import BentoGrid from './BentoGrid';
 import Loader from './Loader';
-import { useModoLeve } from '../desempenho';
+import { usePrefereMenosMovimento } from '../movimento';
 import './UI.css';
 
 export default function UI() {
@@ -29,9 +29,11 @@ export default function UI() {
     return () => mq.removeEventListener('change', ler);
   }, []);
 
-  // Máquina fraca? Ver src/desempenho.js. Repassado ao BentoGrid, que
-  // desliga a animação cara de troca de layout quando estiver ligado.
-  const modoLeve = useModoLeve();
+  // As animações rodam em toda máquina — não existe mais o "modo leve"
+  // que as desligava sozinho em PC fraco. O único caso em que elas saem
+  // é quando a pessoa PEDIU menos movimento nas configurações do
+  // sistema. Ver src/movimento.js.
+  const semMovimento = usePrefereMenosMovimento();
 
   // Em vez de ler o scroll físico, criamos um progresso virtual de 0 a 1
   const introProgress = useMotionValue(0);
@@ -142,7 +144,7 @@ export default function UI() {
             }}
           >
             {/* Novo Bento Grid Dinâmico importado do projeto JOB */}
-            <BentoGrid idioma={idioma} modoLeve={modoLeve} />
+            <BentoGrid idioma={idioma} semMovimento={semMovimento} />
           </motion.div>
         </motion.div>
 

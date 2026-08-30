@@ -1100,7 +1100,7 @@ const lerpBox = (a, b, k) => ({
   h: a.h + (b.h - a.h) * k
 });
 
-export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
+export default function BentoGrid({ idioma = "pt", semMovimento = false }) {
   // Reconstrói o objeto de conteúdo sempre que o idioma muda — é
   // barato (só junta objetos já prontos, não busca nada) e mantém
   // TODO o resto do arquivo (`profileData.x`, em centenas de lugares)
@@ -1422,9 +1422,10 @@ export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
   // esticar e perder a proporção durante o voo entre presets. O hover só é
   // travado com a gaveta aberta, porque escalar só a cabeça deformaria a forma.
   const headMotion = (card) => ({
-    // Sem animação de layout no modo leve: o card vai direto pro lugar
-    // novo. Ver o comentário do cardMotion logo abaixo.
-    layout: modoLeve ? false : "position",
+    // Só fica sem animação de layout quando a pessoa pediu menos
+    // movimento no sistema; aí o card vai direto pro lugar novo. Ver o
+    // comentário do cardMotion logo abaixo.
+    layout: semMovimento ? false : "position",
     ...(openCard === card ? { whileHover: { scale: 1 } } : {})
   });
 
@@ -1696,15 +1697,19 @@ export default function BentoGrid({ idioma = "pt", modoLeve = false }) {
   // Esta é a animação mais cara do site: 14 cards mudando de POSIÇÃO E
   // TAMANHO ao mesmo tempo, cada quadro exigindo que o navegador meça e
   // reposicione tudo. Medido numa CPU 6x mais lenta, 23% dos quadros da
-  // transição passavam de 33ms. Num PC que aguenta, ela continua igual;
-  // no que não aguenta, o layout troca na hora — sem graça, mas sem
-  // engasgo, que é o que importa quando a alternativa é travar.
+  // transição passavam de 33ms — mesmo assim ela roda em todo mundo, por
+  // decisão de projeto: já existiu um "modo leve" que a desligava sozinho
+  // em máquina fraca, e ele errava o palpite com frequência demais pra
+  // valer o que tirava. Ver src/movimento.js.
+  //
+  // O único caso em que ela sai é `prefers-reduced-motion`, quando a
+  // pessoa pediu menos movimento nas configurações do sistema.
   const cardMotion = {
-    layout: modoLeve ? false : true,
-    // O zoom do hover também sai: é transform em 14 cards, e em máquina
-    // fraca cada um desses custa.
-    ...(modoLeve ? {} : { whileHover: { scale: 1.02 } }), // Substitui o CSS hover para não bugar o framer motion!
-    transition: modoLeve ? { duration: 0 } : {
+    layout: semMovimento ? false : true,
+    // O zoom do hover sai junto: quem pediu menos movimento não quer
+    // nem os 2% de escala no hover dos 14 cards.
+    ...(semMovimento ? {} : { whileHover: { scale: 1.02 } }), // Substitui o CSS hover para não bugar o framer motion!
+    transition: semMovimento ? { duration: 0 } : {
       type: "spring",
       bounce: 0.35,      // Elasticidade (0 a 1) - dá o efeito chiclete sem ser exagerado
       duration: DURACAO_TROCA   // Força a ser muito mais lento e majestoso
