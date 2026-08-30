@@ -271,6 +271,13 @@ function SiteCase({ site, variant = "classic", idioma = "pt" }) {
                   src={itemAtual}
                   alt={`${site.nome}${temVariasFotos ? ` (${imgIndex + 1} de ${imagens.length})` : ''}`}
                   className="bento-case-media-img"
+                  /* A primeira foto do card é o que o visitante vê assim
+                     que o card aparece, então ela carrega normal; as
+                     outras do carrossel só baixam quando ele avança. */
+                  loading={imgIndex === 0 ? undefined : "lazy"}
+                  /* Decodifica fora da thread principal: sem isso a
+                     troca de foto pode segurar um quadro inteiro. */
+                  decoding="async"
                 />
               )}
             </motion.div>
@@ -379,10 +386,10 @@ const SITES_BASE = [
     // a tela de login. Mais de uma imagem aqui já ativa o carrossel de
     // fotos sozinho.
     imagens: [
-      arquivo("/projects/clydes-1-home.jpg"),
-      arquivo("/projects/clydes-2-plugins.jpg"),
-      arquivo("/projects/clydes-3-about.jpg"),
-      arquivo("/projects/clydes-4-login.jpg"),
+      arquivo("/projects/clydes-1-home.webp"),
+      arquivo("/projects/clydes-2-plugins.webp"),
+      arquivo("/projects/clydes-3-about.webp"),
+      arquivo("/projects/clydes-4-login.webp"),
     ],
     texto: {
       pt: {

@@ -7,6 +7,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import './PanoramaViewer.css';
 import { arquivo } from '../arquivos'
 
+// Qual arquivo de textura usar na esfera. A de 4096x2048 é a boa, mas
+// uma textura vive descomprimida na memória de vídeo (largura x altura
+// x 4 bytes, mais os mipmaps): a de 4096 come ~45 MB de VRAM, a de
+// 2048 come ~11 MB. Em celular isso é a diferença entre girar liso e
+// engasgar, então telas estreitas recebem a versão menor — como o
+// panorama fica dentro de um card (não em tela cheia), a perda de
+// nitidez lá praticamente não aparece.
+//
+// A escolha é feita UMA vez, quando o módulo carrega, e não a cada
+// render: `useTexture` guarda a textura em cache pela URL, então trocar
+// a URL no meio do caminho (girar o celular, por exemplo) faria o
+// three.js baixar e subir uma segunda textura pra GPU sem descartar a
+// primeira — o oposto do que queremos.
+const TEXTURA_PANO = arquivo(
+  typeof window !== 'undefined' && window.innerWidth < 900
+    ? '/Panorama-mobile.webp'
+    : '/Panorama.webp'
+);
+
 // Estrutura (posição na esfera 360, ícone, link) não muda com o idioma
 // — só título/descrição. Base + texto por idioma, junta os dois na hora
 // de usar (montarHotspots/montarMusicSlides mais abaixo) — mesmo
@@ -223,7 +242,7 @@ const TEXTO_PANO = {
 function PanoramaSphere({ activeHotspot, setActiveHotspot, idioma = "pt" }) {
   const HOTSPOTS = montarHotspots(idioma);
   const tp = TEXTO_PANO[idioma];
-  const texture = useTexture(arquivo('/Panorama.webp'));
+  const texture = useTexture(TEXTURA_PANO);
   texture.colorSpace = THREE.SRGBColorSpace; // Garantir cores corretas
 
   // Função para ajudar a mapear novos pontos
@@ -517,4 +536,4 @@ export function PanoramaViewer({ idioma = "pt" }) {
 // Os dois modelos .glb ja faziam isso (useGLTF.preload nos seus
 // arquivos); esta era a unica midia pesada que ficava pra depois, e por
 // isso a primeira abertura do 360 engasgava.
-useTexture.preload(arquivo('/Panorama.webp'));
+useTexture.preload(TEXTURA_PANO);
