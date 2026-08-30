@@ -253,7 +253,7 @@ function PanoramaSphere({ activeHotspot, setActiveHotspot, idioma = "pt" }) {
 
   const renderIcon = (iconName, isActive) => {
     if (iconName === 'music') return <Music size={20} />;
-    if (iconName === 'clydes') return <img src="https://i.postimg.cc/gJFCV1Rz/Sem-T-tulo-1.png" alt="Clydes" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', imageRendering: 'auto', filter: isActive ? 'invert(1) brightness(0)' : 'none' }} />;
+    if (iconName === 'clydes') return <img src={arquivo('/clydes-icone.webp')} alt="Clydes" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', imageRendering: 'auto', filter: isActive ? 'invert(1) brightness(0)' : 'none' }} />;
     if (iconName === 'youtube') return <PlayCircle size={20} />;
     if (iconName === 'discord') return (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">

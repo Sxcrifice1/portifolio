@@ -413,10 +413,10 @@ const SITES_BASE = [
     // 4 telas do launcher: vendas, métodos de pagamento, scraping e a
     // aba de lives/notícias.
     imagens: [
-      "https://i.postimg.cc/3J5rDtgf/Captura-de-tela-2026-06-28-194135.png",
-      "https://i.postimg.cc/HsDW76QF/Captura-de-tela-2026-06-28-194150.png",
-      "https://i.postimg.cc/wT8xswhS/Captura-de-tela-2026-06-28-194203.png",
-      "https://i.postimg.cc/65J6GMrJ/image-orisginal.jpg",
+      arquivo("/projects/launcher-1-vendas.webp"),
+      arquivo("/projects/launcher-2-pagamentos.webp"),
+      arquivo("/projects/launcher-3-scraping.webp"),
+      arquivo("/projects/launcher-4-lives.webp"),
     ],
     texto: {
       pt: {
@@ -439,11 +439,11 @@ const PROJECTS_BASE = [
     year: "2026",
     link: null,
     imagens: [
-      "https://i.postimg.cc/hvmJHq3n/9170f7fd-4a86-4f94-9086-55902357a705.png",
-      "https://i.postimg.cc/Rht3jzbh/Sem-Titasdulo-1.png",
-      "https://i.postimg.cc/bwmvVJN9/w2o-2.png",
-      "https://i.postimg.cc/ZKcY0R3Z/e1236a74-29c8-4bf9-a865-6d33d9189c77.png",
-      "https://i.postimg.cc/wvLgzTHf/1ff0a78a-5be0-4cac-a62c-fefa1cfbeb8a.png",
+      arquivo("/projects/payandeh-1.webp"),
+      arquivo("/projects/payandeh-2.webp"),
+      arquivo("/projects/payandeh-3.webp"),
+      arquivo("/projects/payandeh-4.webp"),
+      arquivo("/projects/payandeh-5.webp"),
       // Vídeos da mesma marca — arquivo direto (`videoFile`, toca em
       // <video>), não embed de página (`video`, tocaria em <iframe>).
       // Link do Dropbox com `dl=1` (não `dl=0`): dl=1 entrega o
@@ -473,11 +473,11 @@ const PROJECTS_BASE = [
     year: "2024",
     link: null,
     imagens: [
-      "https://i.postimg.cc/MKc2sqtP/caixa-embalagem.png",
-      "https://i.postimg.cc/SsQHchnb/P-ACOTE.png",
-      "https://i.postimg.cc/gkf9QQTw/cartaoi-visita.png",
-      "https://i.postimg.cc/JhLf4Jm4/Clean-Washed-T-shirt-Mockup-Front.png",
-      "https://i.postimg.cc/vB8C5s4G/marca.png",
+      arquivo("/projects/marca-1-embalagem.webp"),
+      arquivo("/projects/marca-2-pacote.webp"),
+      arquivo("/projects/marca-3-cartao.webp"),
+      arquivo("/projects/marca-4-camiseta.webp"),
+      arquivo("/projects/marca-5-logo.webp"),
     ],
     texto: {
       pt: {
@@ -502,7 +502,7 @@ const PROJECTS_BASE = [
     // porque o único item de `imagens` é o vídeo, que não dá pra usar
     // como capa estática. `thumb`, quando existe, tem prioridade sobre
     // aquela regra (ver DraggableCard mais abaixo no JSX).
-    thumb: "https://i.postimg.cc/RFN1fsQY/Captura-de-tela-2026-08-28-144123.png",
+    thumb: arquivo("/projects/projeto-2020-capa.webp"),
     imagens: [
       // `semCorte: true`: este vídeo é HORIZONTAL (1024x576), diferente
       // de quase tudo nos outros projetos (vertical) — no card poster,
